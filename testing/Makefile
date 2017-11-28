@@ -13,6 +13,8 @@ JFLAGS = -ea
 # See comment in ../Makefile
 PYTHON = python3
 
+RMAKE = "$(MAKE)"
+
 TESTER = $(PYTHON) tester.py
 
 TESTER_FLAGS =
@@ -23,8 +25,8 @@ TESTS = samples/*.in *.in
 
 # First, and therefore default, target.
 default:
-	$(MAKE) -C .. 
-	$(MAKE) PYTHON=$(PYTHON) check
+	$(RMAKE) -C .. 
+	$(RMAKE) PYTHON=$(PYTHON) check
 
 check:
 	@echo "Testing application gitlet.Main..."

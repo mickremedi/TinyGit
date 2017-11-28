@@ -27,6 +27,8 @@ CLASSDIR = ../classes
 # See comment in ../Makefile
 PYTHON = python3
 
+RMAKE = "$(MAKE)"
+
 # A CLASSPATH value that (seems) to work on both Windows and Unix systems.
 # To Unix, it looks like ..:$(CLASSPATH):JUNK and to Windows like
 # JUNK;..;$(CLASSPATH).
@@ -49,10 +51,10 @@ style: default
 	$(STYLEPROG) $(SRCS) 
 
 check:
-	$(MAKE) -C .. PYTHON=$(PYTHON) check
+	$(RMAKE) -C .. PYTHON=$(PYTHON) check
 
 integration:
-	$(MAKE) -C .. PYTHON=$(PYTHON) integration
+	$(RMAKE) -C .. PYTHON=$(PYTHON) integration
 
 unit: default
 	java -ea -cp $(CPATH) gitlet.UnitTest

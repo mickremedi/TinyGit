@@ -29,28 +29,29 @@ PYTHON = python3
 # Flags to pass to tester.py.
 TESTER_FLAGS =
 
+RMAKE = "$(MAKE)"
 
 # Targets that don't correspond to files, but are to be treated as commands.
 .PHONY: default check integration unit clean style
 
 default:
-	$(MAKE) -C $(PACKAGE) default
+	$(RMAKE) -C $(PACKAGE) default
 
 check: integration unit
 
 integration: default
-	$(MAKE) -C testing PYTHON=$(PYTHON) TESTER_FLAGS="$(TESTER_FLAGS)" check
+	$(RMAKE) -C testing PYTHON=$(PYTHON) TESTER_FLAGS="$(TESTER_FLAGS)" check
 
 unit: default
-	$(MAKE) -C gitlet unit
+	$(RMAKE) -C gitlet unit
 
 style:
-	$(MAKE) -C $(PACKAGE) STYLEPROG=$(STYLEPROG) style
+	$(RMAKE) -C $(PACKAGE) STYLEPROG=$(STYLEPROG) style
 
 # 'make clean' will clean up stuff you can reconstruct.
 clean:
 	$(RM) *~
-	$(MAKE) -C $(PACKAGE) clean
-	$(MAKE) -C testing clean
+	$(RMAKE) -C $(PACKAGE) clean
+	$(RMAKE) -C testing clean
 
 
