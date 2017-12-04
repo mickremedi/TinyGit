@@ -2,6 +2,7 @@ package gitlet;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -24,11 +25,11 @@ public class Main {
                 controller.parseLine(input.nextLine());
             } catch (GitletException e) {
                 System.out.println(e.getMessage());
-                Path dirPath = Paths.get( "./.gitlet" );
+                Path dirPath = Paths.get("./.gitlet");
                 if (Files.exists(dirPath)) {
-                    Files.walk(dirPath)
+                    Files.walk(dirPath, FileVisitOption.FOLLOW_LINKS)
+                        .sorted(Comparator.reverseOrder())
                         .map(Path::toFile)
-                        .sorted(Comparator.comparing(File::isDirectory))
                         .forEach(File::delete);
                 }
                 System.exit(0);

@@ -18,7 +18,7 @@ import static org.junit.Assert.*;
 public class ControllerTest {
 
     private ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-    public String fileName = "testFile.txt";
+    private String fileName = "testFile.txt";
     Controller c;
 
     @Before
@@ -114,14 +114,30 @@ public class ControllerTest {
 
     @Test
     public void log() throws Exception {
-    }
+        c.parseLine("log");
 
-    @Test
-    public void globalLog() throws Exception {
+        String result = outContent.toString();
+
+        File f = new File("tests/logTest.txt");
+        String expected = Utils.readContentsAsString(f);
+        assertEquals(expected, result);
     }
 
     @Test
     public void find() throws Exception {
+        c.parseLine("add " + fileName);
+        c.parseLine("commit \"test\"");
+        c.parseLine("add Makefile");
+
+        Commit head = c.getHead();
+
+        c.parseLine("commit \"test2\"");
+        c.parseLine("find \"test\"");
+
+        String hash = Utils.sha1(Utils.serialize(head));
+        assertEquals(hash + "\n", outContent.toString());
+
+
     }
 
     @Test

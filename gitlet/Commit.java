@@ -3,7 +3,9 @@ package gitlet;
 import java.io.File;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 
 public class Commit implements Serializable {
 
@@ -92,7 +94,9 @@ public class Commit implements Serializable {
         String hash = Utils.sha1(Utils.serialize(this));
         System.out.println("commit " + hash);
 
-        SimpleDateFormat formatter = new SimpleDateFormat("EEE MMM dd H:mm:ss yyyy Z");
+        SimpleDateFormat formatter = new SimpleDateFormat(
+            "EEE MMM dd H:mm:ss yyyy Z"
+        );
         System.out.println("Date: " + formatter.format(_time));
         System.out.println(this._message);
 
