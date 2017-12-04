@@ -1,39 +1,25 @@
 package gitlet;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileVisitOption;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Comparator;
-import java.util.Scanner;
 
-/** Driver class for Gitlet, the tiny stupid version-control system.
- *  @author
+/**
+ * Driver class for Gitlet, the tiny stupid version-control system.
+ *
+ * @author Michael Remediakis
  */
 public class Main {
 
-    /** Usage: java gitlet.Main ARGS, where ARGS contains
-     *  <COMMAND> <OPERAND> .... */
+    /**
+     * Usage: java gitlet.Main ARGS, where ARGS contains
+     * <COMMAND> <OPERAND> ....
+     */
     public static void main(String... args) throws IOException {
         Controller controller = new Controller();
-        Scanner input = new Scanner(System.in);
-        while (true) {
-            try {
-                System.out.print("(gitlet) ");
-                controller.parseLine(input.nextLine());
-            } catch (GitletException e) {
-                System.out.println(e.getMessage());
-                Path dirPath = Paths.get("./.gitlet");
-                if (Files.exists(dirPath)) {
-                    Files.walk(dirPath, FileVisitOption.FOLLOW_LINKS)
-                        .sorted(Comparator.reverseOrder())
-                        .map(Path::toFile)
-                        .forEach(File::delete);
-                }
-                System.exit(0);
-            }
+        try {
+            controller.parseLine(args);
+        } catch (GitletException e) {
+            System.out.println(e.getMessage());
+            System.exit(0);
         }
     }
 

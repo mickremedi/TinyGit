@@ -29,34 +29,25 @@ public class Controller {
 
     }
 
-    public void parseLine(String command) throws GitletException {
-        Pattern x = Pattern.compile("(([\\w.-]+)|(\"[\\w\\s.-]+\"))+");
-        Matcher matcher = x.matcher(command);
-        ArrayList<String> matches = new ArrayList<>();
-        while (matcher.find()) {
-            matches.add(matcher.group());
-        }
-
-        String[] operands = matches.toArray(new String[matches.size()]);
-
-        if (operands.length < 1) {
+    public void parseLine(String[] command) throws GitletException {
+        if (command.length < 1) {
             throw Utils.error("Please enter a command.");
         }
 
-        if (!commands.containsKey(operands[0])) {
+        if (!commands.containsKey(command[0])) {
             throw Utils.error("No command with that name exists.");
         }
 
         File gitlet = new File(".gitlet");
-        if (!operands[0].equals("init") && !gitlet.exists()) {
+        if (!command[0].equals("init") && !gitlet.exists()) {
             throw Utils.error("Not in an initialized Gitlet directory.");
         }
 
-        if (!operands[0].equals("init")) {
+        if (!command[0].equals("init")) {
             head = getHead();
         }
 
-        commands.get(operands[0]).accept(operands);
+        commands.get(command[0]).accept(command);
     }
 
     public void init(String[] unused) {
@@ -88,7 +79,7 @@ public class Controller {
         if (operands.length != 2) {
             throw Utils.error("Incorrect operands.");
         }
-        removeCommitFile(head);
+//        removeCommitFile(head);
         head.addToStage(operands[1]);
         committoFile(head);
     }
@@ -107,7 +98,7 @@ public class Controller {
         if (operands.length != 2) {
             throw Utils.error("Incorrect operands.");
         }
-        removeCommitFile(head);
+//        removeCommitFile(head);
         head.remove(operands[1]);
         committoFile(head);
     }
@@ -285,7 +276,7 @@ public class Controller {
                     throw Utils.error("There is an untracked file in the way; delete it or add it first.");
                 }
             }
-            for (String file: directory) {
+            for (String file: currentHead.getTracked().keySet()) {
                 Utils.restrictedDelete(file);
             }
             for (String file: newCommit.getTracked().keySet()) {
@@ -354,7 +345,10 @@ public class Controller {
 
     }
 
-    public void reset(String[] unused) {
+    public void reset(String[] operands) {
+        if (operands.length != 2) {
+            throw Utils.error("Incorrect operands.");
+        }
 
     }
 
