@@ -25,10 +25,13 @@ public class Main {
             } catch (GitletException e) {
                 System.out.println(e.getMessage());
                 Path dirPath = Paths.get( "./.gitlet" );
-                Files.walk( dirPath )
-                    .map( Path::toFile )
-                    .sorted( Comparator.comparing( File::isDirectory ) )
-                    .forEach( File::delete );                System.exit(0);
+                if (Files.exists(dirPath)) {
+                    Files.walk(dirPath)
+                        .map(Path::toFile)
+                        .sorted(Comparator.comparing(File::isDirectory))
+                        .forEach(File::delete);
+                }
+                System.exit(0);
             }
         }
     }
