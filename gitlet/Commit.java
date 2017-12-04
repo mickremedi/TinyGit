@@ -12,7 +12,7 @@ public class Commit implements Serializable {
     private Date _time;
     private String _message;
     private String _parentReference;
-    private HashMap<String, String> _files;
+    private HashMap<String, String> _tracked;
     private HashMap<String, String> _staged;
     private ArrayList<String> _untracked;
 
@@ -25,7 +25,7 @@ public class Commit implements Serializable {
         _message = message;
         _parentReference = Utils.sha1(Utils.serialize(parent));
         _staged = new HashMap<>();
-        _files = new HashMap<>();
+        _tracked = new HashMap<>();
         _untracked = new ArrayList<>();
         if (parent != null) {
             fillFileReferences(parent);
@@ -36,13 +36,13 @@ public class Commit implements Serializable {
         if (parent._staged.isEmpty() && parent.getUntracked().isEmpty()) {
             throw Utils.error("No changes added to the commit.");
         }
-        for (String file: parent._files.keySet()) {
+        for (String file: parent._tracked.keySet()) {
             if (!parent._untracked.contains(file)) {
-                _files.put(file, parent._files.get(file));
+                _tracked.put(file, parent._tracked.get(file));
             }
         }
         for (String newFile: parent._staged.keySet()) {
-            _files.put(newFile, parent._staged.get(newFile));
+            _tracked.put(newFile, parent._staged.get(newFile));
         }
     }
 
@@ -54,7 +54,7 @@ public class Commit implements Serializable {
         String content = Utils.readContentsAsString(file);
         String hash = Utils.sha1(content);
         _staged.put(fileName, hash);
-        if (!hash.equals(_files.get(fileName))) {
+        if (!hash.equals(_tracked.get(fileName))) {
             File newFile = new File(".gitlet/" + hash);
             Utils.writeContents(newFile, content);
         } else {
@@ -63,11 +63,11 @@ public class Commit implements Serializable {
     }
 
     public void remove(String fileName) {
-        if (!_staged.containsKey(fileName) && !_files.containsKey(fileName)) {
+        if (!_staged.containsKey(fileName) && !_tracked.containsKey(fileName)) {
             throw Utils.error("No reason to remove the file.");
         }
         _staged.remove(fileName);
-        if (_files.containsKey(fileName)) {
+        if (_tracked.containsKey(fileName)) {
             untrack(fileName);
             Utils.restrictedDelete(fileName);
         }
@@ -87,6 +87,9 @@ public class Commit implements Serializable {
             return null;
         }
         File file = new File(".gitlet/Commit/" + fileName);
+        if (!file.exists()) {
+            throw Utils.error("No commit with that id exists.");
+        }
         return Utils.readObject(file, Commit.class);
     }
 
@@ -112,8 +115,8 @@ public class Commit implements Serializable {
         return _message;
     }
 
-    public HashMap<String, String> getFiles() {
-        return _files;
+    public HashMap<String, String> getTracked() {
+        return _tracked;
     }
 
     public HashMap<String, String> getStaged() {

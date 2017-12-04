@@ -85,7 +85,7 @@ public class ControllerTest {
 
         Commit head = c.getHead();
         assertEquals("this is a test", head.getMessage());
-        assertEquals(true, head.getFiles().containsKey(fileName));
+        assertEquals(true, head.getTracked().containsKey(fileName));
     }
 
     @Test
@@ -102,14 +102,14 @@ public class ControllerTest {
 
         head = c.getHead();
         assertEquals(true, head.getStaged().isEmpty());
-        assertEquals(false, head.getFiles().isEmpty());
+        assertEquals(false, head.getTracked().isEmpty());
 
         File f = new File(fileName);
         assertEquals(false, f.exists());
 
         c.parseLine("commit \"test2\"");
         head = c.getHead();
-        assertEquals(true, head.getFiles().isEmpty());
+        assertEquals(true, head.getTracked().isEmpty());
     }
 
     @Test

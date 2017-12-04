@@ -20,7 +20,7 @@ public class Controller {
         commands.put("global-log", this::globalLog);
         commands.put("find", this::find);
         commands.put("status", this::status);
-//        commands.put("checkout", this::checkout);
+        commands.put("checkout", this::checkout);
         commands.put("branch", this::branch);
         commands.put("rm-branch", this::removeBranch);
 //        commands.put("reset", this::reset);
@@ -131,7 +131,7 @@ public class Controller {
             throw Utils.error("Incorrect operands.");
         }
         List<String> commitNames = Utils.plainFilenamesIn(".gitlet/Commit");
-        for(String commit: commitNames) {
+        for (String commit : commitNames) {
             System.out.println("===");
             Commit.loadCommit(commit).log();
             System.out.println();
@@ -147,14 +147,14 @@ public class Controller {
 
         List<String> commitNames = Utils.plainFilenamesIn(".gitlet/Commit");
         boolean found = false;
-        for(String commit: commitNames) {
+        for (String commit : commitNames) {
             String curr = Commit.loadCommit(commit).getMessage();
             if (curr.equals(message)) {
                 System.out.println(commit);
                 found = true;
             }
         }
-        if(!found) {
+        if (!found) {
             throw Utils.error("Found no commit with that message.");
         }
 
@@ -170,7 +170,7 @@ public class Controller {
         Collections.sort(branchNames);
 
         System.out.println("=== Branches ===");
-        for(String name: branchNames) {
+        for (String name : branchNames) {
             if (getBranch().equals(name)) {
                 System.out.print("*");
             }
@@ -183,7 +183,7 @@ public class Controller {
 
         System.out.println("=== Staged Files ===");
         Collections.sort(stagedNames);
-        for(String name: stagedNames) {
+        for (String name : stagedNames) {
             System.out.println(name);
         }
         System.out.println();
@@ -192,21 +192,21 @@ public class Controller {
         Collections.sort(removedNames);
 
         System.out.println("=== Removed Files ===");
-        for(String name: removedNames) {
+        for (String name : removedNames) {
             System.out.println(name);
         }
         System.out.println();
 
-        Set<String> filesSet = head.getFiles().keySet();
-        List<String> filesNames = new ArrayList<>(filesSet);
-        Collections.sort(filesNames);
+        Set<String> trackedSet = head.getTracked().keySet();
+        List<String> trackedNames = new ArrayList<>(trackedSet);
+        Collections.sort(trackedNames);
 
         List<String> modified = new ArrayList<>();
         System.out.println("=== Modifications Not Staged For Commit ===");
 
-        for (String name: stagedNames) {
+        for (String name : stagedNames) {
             File f = new File(name);
-            if(!f.exists()) {
+            if (!f.exists()) {
                 modified.add(name + " (deleted)");
             } else {
                 String fileContent = Utils.readContentsAsString(f);
@@ -217,15 +217,15 @@ public class Controller {
             }
         }
 
-        for(String name: filesNames) {
+        for (String name : trackedNames) {
             File f = new File(name);
-            if(!f.exists() && !removedNames.contains(name)) {
+            if (!f.exists() && !removedNames.contains(name)) {
                 modified.add(name + " (deleted)");
             }
             if (f.exists()) {
                 String fileContent = Utils.readContentsAsString(f);
                 String hashed = Utils.sha1(fileContent);
-                if (!stagedSet.contains(name) && !hashed.equals(head.getFiles().get(name))) {
+                if (!stagedSet.contains(name) && !hashed.equals(head.getTracked().get(name))) {
                     modified.add(name + " (modified)");
                 }
             }
@@ -233,19 +233,78 @@ public class Controller {
 
         Collections.sort(modified);
 
-        for (String mod: modified) {
+        for (String mod : modified) {
             System.out.println(mod);
         }
 
         System.out.println();
 
-        List<String> directoryNames = Utils.plainFilenamesIn(".");
+        List<String> directory = Utils.plainFilenamesIn(".");
+        Collections.sort(directory);
 
+        System.out.println("=== Untracked Files ===");
+        for (String name : directory) {
+            if (!stagedSet.contains(name) && !trackedSet.contains(name)) {
+                System.out.println(name);
+            } else if (removedNames.contains(name)) {
+                System.out.println(name);
+            }
+        }
+        System.out.println();
 
 
     }
 
-    public void checkout(String[] unused) {
+    public void checkout(String[] operands) {
+        Commit commit = null;
+        String fileName = "";
+        if (operands.length == 3 && operands[1].equals("--")) {
+            commit = getHead();
+            fileName = operands[2];
+        } else if (operands.length == 4 && operands[2].equals("--")) {
+            commit = Commit.loadCommit(operands[1]);
+            fileName = operands[3];
+        } else if (operands.length == 2) {
+            File branch = new File(".gitlet/Branch/" + operands[1]);
+            String commitHash = Utils.readContentsAsString(branch);
+            if (!branch.exists()) {
+                throw Utils.error("No such branch exists.");
+            }
+            if (operands[1].equals(getBranch())) {
+                throw Utils.error("No need to checkout the current branch.");
+            }
+            Commit currentHead = getHead();
+            Commit newCommit = Commit.loadCommit(commitHash);
+            List<String> directory = Utils.plainFilenamesIn(".");
+            for (String file: directory) {
+                File temp = new File(file);
+                String hash = Utils.sha1(Utils.readContents(temp));
+                if (!currentHead.getTracked().containsKey(file) &&
+                    newCommit.getTracked().containsKey(file) &&
+                    !hash.equals(newCommit.getTracked().get(file))) {
+                    throw Utils.error("There is an untracked file in the way; delete it or add it first.");
+                }
+            }
+
+            return;
+
+        } else {
+            throw Utils.error("Incorrect operands.");
+        }
+
+        if (!commit.getTracked().containsKey(fileName)) {
+            throw Utils.error("File does not exist in that commit.");
+        }
+
+        String hash = commit.getTracked().get(fileName);
+        File copy = new File(".gitlet/" + hash);
+        String copyContents = Utils.readContentsAsString(copy);
+
+        File f = new File(fileName);
+
+        if (f.exists()) {
+            Utils.writeContents(f, copyContents);
+        }
 
     }
 
