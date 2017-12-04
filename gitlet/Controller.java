@@ -285,7 +285,17 @@ public class Controller {
                     throw Utils.error("There is an untracked file in the way; delete it or add it first.");
                 }
             }
-
+            for (String file: directory) {
+                Utils.restrictedDelete(file);
+            }
+            for (String file: newCommit.getTracked().keySet()) {
+                String hash = newCommit.getTracked().get(file);
+                File copy = new File(".gitlet/" + hash);
+                String copyContents = Utils.readContentsAsString(copy);
+                File newFile = new File(file);
+                Utils.writeContents(newFile, copyContents);
+            }
+            updateBranch(operands[1]);
             return;
 
         } else {
@@ -350,6 +360,11 @@ public class Controller {
 
     public void merge(String[] operands) {
 
+    }
+
+    public void updateBranch(String newBranch) {
+        File head = new File(".gitlet/head");
+        Utils.writeContents(head, newBranch);
     }
 
     public String getBranch() {
