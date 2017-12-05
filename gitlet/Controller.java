@@ -1,6 +1,11 @@
 package gitlet;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.FileVisitOption;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -71,7 +76,9 @@ public class Controller {
 
         Date firstDay = new Date();
         firstDay.setTime(0);
-        Commit head = new Commit("initial commit", firstDay, null);
+
+        String nullHash = Utils.sha1(Utils.serialize(null));
+        Commit head = new Commit("initial commit", firstDay, nullHash);
         committoFile(head);
     }
 
@@ -79,9 +86,9 @@ public class Controller {
         if (operands.length != 2) {
             throw Utils.error("Incorrect operands.");
         }
-        removeCommitFile(head);
+        String headHash = getHeadHash();
         head.addToStage(operands[1]);
-        committoFile(head);
+        updateCommitFile(headHash ,head);
     }
 
     public void commit(String[] operands) {
@@ -90,7 +97,7 @@ public class Controller {
         }
         Date current = new Date();
         String message = operands[1].replaceAll("^\"|\"$", "");
-        Commit newCommit = new Commit(message, current, head);
+        Commit newCommit = new Commit(message, current, getHeadHash());
         committoFile(newCommit);
     }
 
@@ -98,9 +105,9 @@ public class Controller {
         if (operands.length != 2) {
             throw Utils.error("Incorrect operands.");
         }
-        removeCommitFile(head);
+        String headHash = getHeadHash();
         head.remove(operands[1]);
-        committoFile(head);
+        updateCommitFile(headHash, head);
     }
 
     public void log(String[] unused) {
@@ -108,10 +115,16 @@ public class Controller {
             throw Utils.error("Incorrect operands.");
         }
         Commit tracker = head;
+        System.out.println("===");
+        tracker.log(getHeadHash());
+        System.out.println();
+        String parentHash = tracker.getParentHash();
+        tracker = tracker.getParent();
         while (tracker != null) {
             System.out.println("===");
-            tracker.log();
+            tracker.log(parentHash);
             System.out.println();
+            parentHash = tracker.getParentHash();
             tracker = tracker.getParent();
         }
 
@@ -124,7 +137,7 @@ public class Controller {
         List<String> commitNames = Utils.plainFilenamesIn(".gitlet/Commit");
         for (String commit : commitNames) {
             System.out.println("===");
-            Commit.loadCommit(commit).log();
+            Commit.loadCommit(commit).log(commit);
             System.out.println();
         }
 
@@ -368,6 +381,12 @@ public class Controller {
         return Utils.readContentsAsString(head);
     }
 
+    public String getHeadHash() {
+        File branch = new File(".gitlet/Branch/" + getBranch());
+        return Utils.readContentsAsString(branch);
+
+    }
+
     public Commit getHead() {
         File branch = new File(".gitlet/Branch/" + getBranch());
         String branchHash = Utils.readContentsAsString(branch);
@@ -383,11 +402,8 @@ public class Controller {
         Utils.writeContents(headFile, hashed);
     }
 
-    public void removeCommitFile(Commit head) {
-        byte[] serialized = Utils.serialize(head);
-        String hashed = Utils.sha1(serialized);
-        File f = new File(".gitlet/Commit/" + hashed);
-        f.delete();
+    public void updateCommitFile(String hash, Commit head) {
+        head.storeCommit(hash);
     }
 
     public void checkUntracked(Commit other) {

@@ -17,18 +17,20 @@ public class Commit implements Serializable {
     private ArrayList<String> _untracked;
 
 
-    public Commit(String message, Date time, Commit parent) {
+    public Commit(String message, Date time, String parent) {
         if (message.length() == 0) {
             throw Utils.error("Please enter a commit message.");
         }
         _time = time;
         _message = message;
-        _parentReference = Utils.sha1(Utils.serialize(parent));
+        _parentReference = parent;
         _staged = new HashMap<>();
         _tracked = new HashMap<>();
         _untracked = new ArrayList<>();
-        if (parent != null) {
-            fillFileReferences(parent);
+
+        Commit parentCommit = getParent();
+        if (parentCommit != null) {
+            fillFileReferences(parentCommit);
         }
     }
 
@@ -97,8 +99,7 @@ public class Commit implements Serializable {
         return Utils.readObject(file, Commit.class);
     }
 
-    public void log() {
-        String hash = Utils.sha1(Utils.serialize(this));
+    public void log(String hash) {
         System.out.println("commit " + hash);
 
         SimpleDateFormat formatter = new SimpleDateFormat(
@@ -113,6 +114,10 @@ public class Commit implements Serializable {
 
     public Commit getParent() {
         return loadCommit(_parentReference);
+    }
+
+    public String getParentHash() {
+        return _parentReference;
     }
 
     public String getMessage() {

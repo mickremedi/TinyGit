@@ -117,12 +117,6 @@ public class ControllerTest {
     }
 
     @Test
-    public void remove2() throws Exception {
-        c.parseLine(array("add", fileName));
-        
-    }
-
-    @Test
     public void log() throws Exception {
         c.parseLine(array("log"));
 
