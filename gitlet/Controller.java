@@ -260,8 +260,8 @@ public class Controller {
     }
 
     public void checkout(String[] operands) {
-        Commit commit = null;
-        String fileName = "";
+        Commit commit;
+        String fileName;
         if (operands.length == 3 && operands[1].equals("--")) {
             commit = getHead();
             fileName = operands[2];
@@ -270,13 +270,14 @@ public class Controller {
             fileName = operands[3];
         } else if (operands.length == 2) {
             File branch = new File(".gitlet/Branch/" + operands[1]);
-            String commitHash = Utils.readContentsAsString(branch);
             if (!branch.exists()) {
                 throw Utils.error("No such branch exists.");
             }
             if (operands[1].equals(getBranch())) {
                 throw Utils.error("No need to checkout the current branch.");
             }
+
+            String commitHash = Utils.readContentsAsString(branch);
 
             Commit otherCommit = Commit.loadCommit(commitHash);
             checkUntracked(otherCommit);
@@ -292,6 +293,10 @@ public class Controller {
                 File newFile = new File(file);
                 Utils.writeContents(newFile, copyContents);
             }
+
+            otherCommit.getStaged().clear();
+            updateCommitFile(commitHash, otherCommit);
+
             updateBranch(operands[1]);
             return;
 
@@ -320,13 +325,13 @@ public class Controller {
             throw Utils.error("Incorrect operands.");
         }
 
-        List<String> branchNames = Utils.plainFilenamesIn(".gitlet/Commit");
+        List<String> branchNames = Utils.plainFilenamesIn(".gitlet/Branch");
         if (branchNames.contains(operands[1])) {
-            throw Utils.error("Cannot remove the current branch.");
+            throw Utils.error("A branch with that name already exists.");
         }
 
         File newBranch = new File(".gitlet/Branch/" + operands[1]);
-        String headhash = Utils.sha1(Utils.serialize(getHead()));
+        String headhash = getHeadHash();
         Utils.writeContents(newBranch, headhash);
 
 
