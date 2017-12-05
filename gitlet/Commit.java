@@ -103,11 +103,10 @@ public class Commit implements Serializable {
         System.out.println("commit " + hash);
 
         SimpleDateFormat formatter = new SimpleDateFormat(
-            "EEE MMM dd H:mm:ss yyyy Z"
+            "EEE MMM d HH:mm:ss yyyy Z"
         );
         System.out.println("Date: " + formatter.format(_time));
         System.out.println(this._message);
-
 
     }
 

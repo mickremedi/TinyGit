@@ -88,7 +88,7 @@ public class Controller {
         }
         String headHash = getHeadHash();
         head.addToStage(operands[1]);
-        updateCommitFile(headHash ,head);
+        updateCommitFile(headHash, head);
     }
 
     public void commit(String[] operands) {
@@ -283,10 +283,10 @@ public class Controller {
             checkUntracked(otherCommit);
 
             Commit head = getHead();
-            for (String file: head.getTracked().keySet()) {
+            for (String file : head.getTracked().keySet()) {
                 Utils.restrictedDelete(file);
             }
-            for (String file: otherCommit.getTracked().keySet()) {
+            for (String file : otherCommit.getTracked().keySet()) {
                 String hash = otherCommit.getTracked().get(file);
                 File copy = new File(".gitlet/" + hash);
                 String copyContents = Utils.readContentsAsString(copy);
@@ -365,10 +365,22 @@ public class Controller {
 
         checkUntracked(c);
 
-        for (String fileName: c.getTracked().keySet()) {
-            String[] temp = { "checkout", commitID, "--", fileName};
-            checkout(temp);
+        for (String filename : head.getTracked().keySet()) {
+            if (c.getTracked().containsKey(filename)) {
+                String[] temp = {"checkout", commitID, "--", filename};
+                checkout(temp);
+            } else {
+                Utils.restrictedDelete(filename);
+            }
         }
+
+
+        c.getStaged().clear();
+        updateCommitFile(commitID, c);
+
+
+        File branch = new File(".gitlet/Branch/" + getBranch());
+        Utils.writeContents(branch, commitID);
 
     }
 
@@ -415,7 +427,7 @@ public class Controller {
         Commit head = getHead();
 
         List<String> directory = Utils.plainFilenamesIn(".");
-        for (String file: directory) {
+        for (String file : directory) {
             File temp = new File(file);
             String hash = Utils.sha1(Utils.readContents(temp));
             if (!head.getTracked().containsKey(file) &&
