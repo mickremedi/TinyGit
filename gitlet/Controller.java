@@ -23,7 +23,7 @@ public class Controller {
         commands.put("checkout", this::checkout);
         commands.put("branch", this::branch);
         commands.put("rm-branch", this::removeBranch);
-//        commands.put("reset", this::reset);
+        commands.put("reset", this::reset);
 //        commands.put("merge", this::merge);
 
 
@@ -79,7 +79,7 @@ public class Controller {
         if (operands.length != 2) {
             throw Utils.error("Incorrect operands.");
         }
-//        removeCommitFile(head);
+        removeCommitFile(head);
         head.addToStage(operands[1]);
         committoFile(head);
     }
@@ -98,7 +98,7 @@ public class Controller {
         if (operands.length != 2) {
             throw Utils.error("Incorrect operands.");
         }
-//        removeCommitFile(head);
+        removeCommitFile(head);
         head.remove(operands[1]);
         committoFile(head);
     }
@@ -264,23 +264,16 @@ public class Controller {
             if (operands[1].equals(getBranch())) {
                 throw Utils.error("No need to checkout the current branch.");
             }
-            Commit currentHead = getHead();
-            Commit newCommit = Commit.loadCommit(commitHash);
-            List<String> directory = Utils.plainFilenamesIn(".");
-            for (String file: directory) {
-                File temp = new File(file);
-                String hash = Utils.sha1(Utils.readContents(temp));
-                if (!currentHead.getTracked().containsKey(file) &&
-                    newCommit.getTracked().containsKey(file) &&
-                    !hash.equals(newCommit.getTracked().get(file))) {
-                    throw Utils.error("There is an untracked file in the way; delete it or add it first.");
-                }
-            }
-            for (String file: currentHead.getTracked().keySet()) {
+
+            Commit otherCommit = Commit.loadCommit(commitHash);
+            checkUntracked(otherCommit);
+
+            Commit head = getHead();
+            for (String file: head.getTracked().keySet()) {
                 Utils.restrictedDelete(file);
             }
-            for (String file: newCommit.getTracked().keySet()) {
-                String hash = newCommit.getTracked().get(file);
+            for (String file: otherCommit.getTracked().keySet()) {
+                String hash = otherCommit.getTracked().get(file);
                 File copy = new File(".gitlet/" + hash);
                 String copyContents = Utils.readContentsAsString(copy);
                 File newFile = new File(file);
@@ -349,6 +342,15 @@ public class Controller {
         if (operands.length != 2) {
             throw Utils.error("Incorrect operands.");
         }
+        String commitID = operands[1];
+        Commit c = Commit.loadCommit(commitID);
+
+        checkUntracked(c);
+
+        for (String fileName: c.getTracked().keySet()) {
+            String[] temp = { "checkout", commitID, "--", fileName};
+            checkout(temp);
+        }
 
     }
 
@@ -386,5 +388,20 @@ public class Controller {
         String hashed = Utils.sha1(serialized);
         File f = new File(".gitlet/Commit/" + hashed);
         f.delete();
+    }
+
+    public void checkUntracked(Commit other) {
+        Commit head = getHead();
+
+        List<String> directory = Utils.plainFilenamesIn(".");
+        for (String file: directory) {
+            File temp = new File(file);
+            String hash = Utils.sha1(Utils.readContents(temp));
+            if (!head.getTracked().containsKey(file) &&
+                other.getTracked().containsKey(file) &&
+                !hash.equals(other.getTracked().get(file))) {
+                throw Utils.error("There is an untracked file in the way; delete it or add it first.");
+            }
+        }
     }
 }

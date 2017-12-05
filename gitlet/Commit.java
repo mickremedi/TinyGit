@@ -51,6 +51,10 @@ public class Commit implements Serializable {
         if (!file.exists()) {
             throw Utils.error("File does not exist.");
         }
+        if (_untracked.contains(fileName)) {
+            _untracked.remove(fileName);
+            return;
+        }
         String content = Utils.readContentsAsString(file);
         String hash = Utils.sha1(content);
         _staged.put(fileName, hash);
