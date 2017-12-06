@@ -12,6 +12,7 @@ public class Commit implements Serializable {
     private Date _time;
     private String _message;
     private String _parentReference;
+    private String _otherParentReference = null;
     private HashMap<String, String> _tracked;
     private HashMap<String, String> _staged;
     private ArrayList<String> _untracked;
@@ -32,6 +33,11 @@ public class Commit implements Serializable {
         if (parentCommit != null) {
             fillFileReferences(parentCommit);
         }
+    }
+
+    public Commit(String message, Date time, String parent, String otherParent) {
+        this(message, time, parent);
+        _otherParentReference = otherParent;
     }
 
     private void fillFileReferences(Commit parent) {
@@ -101,6 +107,10 @@ public class Commit implements Serializable {
 
     public void log(String hash) {
         System.out.println("commit " + hash);
+
+        if (_otherParentReference != null) {
+            System.out.println("Merge: " + _parentReference.substring(0, 7) + " " + _otherParentReference.substring(0, 7));
+        }
 
         SimpleDateFormat formatter = new SimpleDateFormat(
             "EEE MMM d HH:mm:ss yyyy Z"

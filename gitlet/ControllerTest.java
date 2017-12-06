@@ -117,63 +117,44 @@ public class ControllerTest {
     }
 
     @Test
-    public void log() throws Exception {
-        c.parseLine(array("log"));
-
-        String result = outContent.toString();
-
-        File f = new File("tests/logTest.txt");
-        String expected = Utils.readContentsAsString(f);
-        assertEquals(expected, result);
-    }
-
-    @Test
     public void find() throws Exception {
         c.parseLine(array("add", fileName));
         c.parseLine(array("commit", "test"));
         c.parseLine(array("add", "Makefile"));
 
-        Commit head = c.getHead();
-
         c.parseLine(array("commit", "test2"));
         c.parseLine(array("find", "test"));
 
-        String hash = Utils.sha1(Utils.serialize(head));
-        assertEquals(hash + "\n", outContent.toString());
+        String[] commits = outContent.toString().split("\n");
+        Commit current = Commit.loadCommit(commits[0]);
+        assertEquals("test", current.getMessage());
 
 
-    }
-
-    @Test
-    public void status() throws Exception {
-    }
-
-    @Test
-    public void checkout() throws Exception {
-    }
-
-    @Test
-    public void branch() throws Exception {
-    }
-
-    @Test
-    public void removeBranch() throws Exception {
-    }
-
-    @Test
-    public void reset() throws Exception {
     }
 
     @Test
     public void merge() throws Exception {
-    }
+        File f = new File(fileName);
 
-    @Test
-    public void committoFile() throws Exception {
-    }
+        c.parseLine(array("add", fileName));
+        c.parseLine(array("commit", "test"));
 
-    @Test
-    public void removeCommitFile() throws Exception {
+        c.parseLine(array("branch", "newBranch"));
+
+        Utils.writeContents(f, "wazzup");
+
+        c.parseLine(array("add", fileName));
+        c.parseLine(array("commit", "test2"));
+
+        c.parseLine(array("checkout", "newBranch"));
+
+        Utils.writeContents(f, "yoyoyo");
+
+        c.parseLine(array("add", fileName));
+        c.parseLine(array("commit", "test3"));
+        c.parseLine(array("checkout", "master"));
+        c.parseLine(array("merge", "newBranch"));
+
     }
 
 }
