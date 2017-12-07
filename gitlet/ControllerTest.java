@@ -124,7 +124,7 @@ public class ControllerTest {
     public void find() throws Exception {
         c.parseLine("add", fileOne);
         c.parseLine("commit", "test");
-        c.parseLine("add", "Makefile");
+        c.parseLine("add", fileTwo);
 
         c.parseLine("commit", "test2");
         c.parseLine("find", "test");

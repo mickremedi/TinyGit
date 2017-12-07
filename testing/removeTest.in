@@ -1,0 +1,21 @@
+> init
+<<<
+
++ wug.txt wug.txt
+> add wug.txt
+<<<
+
+> rm wug.txt
+<<<
+
+> add wug.txt
+<<<
+
+> commit "test"
+<<<
+
+> rm wug.txt
+<<<
+
+> commit "test2"
+<<<
