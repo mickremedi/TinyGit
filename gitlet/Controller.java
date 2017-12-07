@@ -287,6 +287,11 @@ public class Controller {
             }
         }
 
+        for (String filename: c.getTracked().keySet()) {
+            if (!head.getTracked().containsKey(filename)) {
+                checkout("checkout", commitID, "--", filename);
+            }
+        }
 
         c.getStaged().clear();
         c.getUntracked().clear();
@@ -394,6 +399,9 @@ public class Controller {
 
     public String getHeadHash(String branchName) {
         File branch = new File(".gitlet/Branch/" + branchName);
+        if (!branch.exists()) {
+            throw Utils.error("A branch with that name does not exist.");
+        }
         return Utils.readContentsAsString(branch);
 
     }
@@ -407,9 +415,6 @@ public class Controller {
     public Commit getHead(String branchName) {
         String headHash = getHeadHash(branchName);
         File actualHead = new File(".gitlet/Commit/" + headHash);
-        if (!actualHead.exists()) {
-            throw Utils.error("A branch with that name does not exist.");
-        }
         return Utils.readObject(actualHead, Commit.class);
     }
 

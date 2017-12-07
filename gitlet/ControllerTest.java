@@ -137,6 +137,46 @@ public class ControllerTest {
     }
 
     @Test
+    public void reset() throws Exception {
+        c.parseLine("add", fileOne);
+        c.parseLine("add", fileTwo);
+        c.parseLine("commit", "two files");
+        String secondHash = c.getHeadHash();
+
+        c.parseLine("branch", "newBranch");
+
+        File f3 = new File("h.txt");
+        Utils.writeContents(f3, "h content");
+
+
+        c.parseLine("add", "h.txt");
+        c.parseLine("rm", fileOne);
+        c.parseLine("commit", "added h removed fileone");
+
+        c.parseLine("checkout", "newBranch");
+        c.parseLine("rm", fileTwo);
+
+        File f4 = new File("k.txt");
+        Utils.writeContents(f4, "k content");
+
+        c.parseLine("add", "k.txt");
+        c.parseLine("commit", "added k removed filetwo");
+
+        c.parseLine("checkout", "master");
+
+        File f5 = new File("m.txt");
+        Utils.writeContents(f5, "m content");
+
+        c.parseLine("add", "m.txt");
+
+
+        c.parseLine("reset", secondHash);
+
+        c.parseLine("status");
+
+    }
+
+    @Test
     public void merge() throws Exception {
         File f = new File(fileOne);
         File f2 = new File(fileTwo);
