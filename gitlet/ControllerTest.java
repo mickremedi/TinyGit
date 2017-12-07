@@ -18,22 +18,25 @@ import static org.junit.Assert.*;
 public class ControllerTest {
 
     private ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-    private String fileName = "testFile.txt";
+    private String fileOne = "testFile.txt";
+    private String fileTwo = "otherFile.txt";
     Controller c;
 
     @Before
     public void setUp() throws Exception {
         System.setOut(new PrintStream(outContent));
-        File f = new File(fileName);
-        Utils.writeContents(f, "hello there");
+        writeFile(fileOne, "Hello there");
+        writeFile(fileTwo, "what is up");
+
         c = new Controller();
-        c.parseLine(array("init"));
+        c.parseLine("init");
     }
 
     @After
     public void tearDown() throws Exception {
         System.setOut(null);
-        Utils.restrictedDelete(fileName);
+        Utils.restrictedDelete(fileOne);
+        Utils.restrictedDelete(fileTwo);
         Path dirPath = Paths.get("./.gitlet");
         if (Files.exists(dirPath)) {
             Files.walk(dirPath, FileVisitOption.FOLLOW_LINKS)
@@ -44,8 +47,9 @@ public class ControllerTest {
 
     }
 
-    public String[] array(String... operands) {
-        return operands;
+    public void writeFile(String name, String content) {
+        File f = new File(name);
+        Utils.writeContents(f, content);
     }
 
     @Test
@@ -63,14 +67,14 @@ public class ControllerTest {
 
     @Test
     public void add() throws Exception {
-        c.parseLine(array("add", fileName));
+        c.parseLine("add", fileOne);
 
         Commit head = c.getHead();
-        assertEquals(true, head.getStaged().containsKey(fileName));
+        assertEquals(true, head.getStaged().containsKey(fileOne));
 
-        File trueFile = new File(fileName);
+        File trueFile = new File(fileOne);
 
-        String fileHash = head.getStaged().get(fileName);
+        String fileHash = head.getStaged().get(fileOne);
         File hashedFile = new File(".gitlet/" + fileHash);
         assertEquals(true, hashedFile.exists());
 
@@ -84,46 +88,46 @@ public class ControllerTest {
 
     @Test
     public void commit() throws Exception {
-        c.parseLine(array("add", fileName));
-        c.parseLine(array("commit", "this is a test"));
+        c.parseLine("add", fileOne);
+        c.parseLine("commit", "this is a test");
 
         Commit head = c.getHead();
         assertEquals("this is a test", head.getMessage());
-        assertEquals(true, head.getTracked().containsKey(fileName));
+        assertEquals(true, head.getTracked().containsKey(fileOne));
     }
 
     @Test
     public void remove() throws Exception {
-        c.parseLine(array("add", fileName));
-        c.parseLine(array("rm", fileName));
+        c.parseLine("add", fileOne);
+        c.parseLine("rm", fileOne);
 
         Commit head = c.getHead();
         assertEquals(true, head.getStaged().isEmpty());
 
-        c.parseLine(array("add", fileName));
-        c.parseLine(array("commit", "test"));
-        c.parseLine(array("rm", fileName));
+        c.parseLine("add", fileOne);
+        c.parseLine("commit", "test");
+        c.parseLine("rm", fileOne);
 
         head = c.getHead();
         assertEquals(true, head.getStaged().isEmpty());
         assertEquals(false, head.getTracked().isEmpty());
 
-        File f = new File(fileName);
+        File f = new File(fileOne);
         assertEquals(false, f.exists());
 
-        c.parseLine(array("commit", "test2"));
+        c.parseLine("commit", "test2");
         head = c.getHead();
         assertEquals(true, head.getTracked().isEmpty());
     }
 
     @Test
     public void find() throws Exception {
-        c.parseLine(array("add", fileName));
-        c.parseLine(array("commit", "test"));
-        c.parseLine(array("add", "Makefile"));
+        c.parseLine("add", fileOne);
+        c.parseLine("commit", "test");
+        c.parseLine("add", "Makefile");
 
-        c.parseLine(array("commit", "test2"));
-        c.parseLine(array("find", "test"));
+        c.parseLine("commit", "test2");
+        c.parseLine("find", "test");
 
         String[] commits = outContent.toString().split("\n");
         Commit current = Commit.loadCommit(commits[0]);
@@ -134,27 +138,42 @@ public class ControllerTest {
 
     @Test
     public void merge() throws Exception {
-        File f = new File(fileName);
+        File f = new File(fileOne);
+        File f2 = new File(fileTwo);
 
-        c.parseLine(array("add", fileName));
-        c.parseLine(array("commit", "test"));
+        c.parseLine("add", fileOne);
+        c.parseLine("add", fileTwo);
+        c.parseLine("commit", "two files");
 
-        c.parseLine(array("branch", "newBranch"));
+        c.parseLine("branch", "newBranch");
 
-        Utils.writeContents(f, "wazzup");
+        File f3 = new File("h.txt");
+        Utils.writeContents(f3, "h content");
 
-        c.parseLine(array("add", fileName));
-        c.parseLine(array("commit", "test2"));
 
-        c.parseLine(array("checkout", "newBranch"));
+        c.parseLine("add", "h.txt");
+        c.parseLine("rm", fileOne);
+        c.parseLine("commit", "added h removed fileone");
 
-        Utils.writeContents(f, "yoyoyo");
+        c.parseLine("checkout", "newBranch");
+        c.parseLine("rm", fileTwo);
 
-        c.parseLine(array("add", fileName));
-        c.parseLine(array("commit", "test3"));
-        c.parseLine(array("checkout", "master"));
-        c.parseLine(array("merge", "newBranch"));
+        File f4 = new File("k.txt");
+        Utils.writeContents(f4, "k content");
 
+        c.parseLine("add", "k.txt");
+        c.parseLine("commit", "added k removed filetwo");
+
+        c.parseLine("checkout", "master");
+        c.parseLine("merge", "newBranch");
+
+        assertEquals(false, f.exists());
+        assertEquals(false, f2.exists());
+        assertEquals(true, f3.exists());
+        assertEquals(true, f4.exists());
+
+        f3.delete();
+        f4.delete();
     }
 
 }

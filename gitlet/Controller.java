@@ -31,7 +31,7 @@ public class Controller {
         commands.put("merge", this::merge);
     }
 
-    public void parseLine(String[] command) throws GitletException {
+    public void parseLine(String... command) throws GitletException {
         if (command.length < 1) {
             throw Utils.error("Please enter a command.");
         }
@@ -93,9 +93,11 @@ public class Controller {
         if (operands.length != 2) {
             throw Utils.error("Incorrect operands.");
         }
+
         Date current = new Date();
         String message = operands[1];
         Commit newCommit = new Commit(message, current, getHeadHash());
+        clearStage();
         committoFile(newCommit);
     }
 
@@ -228,9 +230,7 @@ public class Controller {
 
         File f = new File(fileName);
 
-        if (f.exists()) {
-            Utils.writeContents(f, copyContents);
-        }
+        Utils.writeContents(f, copyContents);
 
     }
 
@@ -561,5 +561,12 @@ public class Controller {
             otherTracker = splitPoint;
         }
         return splitPoint;
+    }
+
+    public void clearStage() {
+        Commit head = getHead();
+        head.getStaged().clear();
+        head.getUntracked().clear();
+        updateCommitFile(getHeadHash(), head);
     }
 }
