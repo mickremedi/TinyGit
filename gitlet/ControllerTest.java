@@ -170,9 +170,13 @@ public class ControllerTest {
         c.parseLine("add", "m.txt");
 
 
-        c.parseLine("reset", secondHash);
+        c.parseLine("reset", secondHash.substring(0, 6));
 
         c.parseLine("status");
+
+        f3.delete();
+        f4.delete();
+        f5.delete();
 
     }
 

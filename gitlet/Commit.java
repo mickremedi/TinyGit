@@ -6,9 +6,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * This is a class to represent a commit.
+ *
  * @author Michael Remediakis
  */
 public class Commit implements Serializable {
@@ -84,12 +86,12 @@ public class Commit implements Serializable {
         if (parent._staged.isEmpty() && parent.getUntracked().isEmpty()) {
             throw Utils.error("No changes added to the commit.");
         }
-        for (String file: parent._tracked.keySet()) {
+        for (String file : parent._tracked.keySet()) {
             if (!parent._untracked.contains(file)) {
                 _tracked.put(file, parent._tracked.get(file));
             }
         }
-        for (String newFile: parent._staged.keySet()) {
+        for (String newFile : parent._staged.keySet()) {
             _tracked.put(newFile, parent._staged.get(newFile));
         }
     }
@@ -155,8 +157,22 @@ public class Commit implements Serializable {
         if (fileName.equals(Utils.sha1(Utils.serialize(null)))) {
             return null;
         }
-        File file = new File(".gitlet/Commit/" + fileName);
-        if (!file.exists()) {
+        File file = null;
+        boolean exists = false;
+        if (fileName.length() == 6) {
+            List<String> commits = Utils.plainFilenamesIn(".gitlet/Commit");
+            for (String commitName : commits) {
+                if (commitName.startsWith(fileName)) {
+                    file = new File(".gitlet/Commit/" + commitName);
+                    exists = true;
+                }
+            }
+
+        } else {
+            file = new File(".gitlet/Commit/" + fileName);
+            exists = file.exists();
+        }
+        if (!exists) {
             throw Utils.error("No commit with that id exists.");
         }
         return Utils.readObject(file, Commit.class);
@@ -165,6 +181,7 @@ public class Commit implements Serializable {
     /**
      * Prints out the log of the commit, with the given HASH of the
      * commit.
+     *
      * @param hash
      */
     public void log(String hash) {

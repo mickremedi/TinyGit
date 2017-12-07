@@ -10,11 +10,24 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
+/**
+ * Manages the interpretation of commands given by the user.
+ * @author Michael Remediakis
+ */
 public class Controller {
 
+    /**
+     * A map of commands available to the user.
+     */
     private HashMap<String, Consumer<String[]>> commands = new HashMap<>();
+    /**
+     * The head commit of the current branch.
+     */
     private Commit head;
 
+    /**
+     * Initializes all available commands.
+     */
     public Controller() {
         commands.put("init", this::init);
         commands.put("add", this::add);
@@ -31,6 +44,9 @@ public class Controller {
         commands.put("merge", this::merge);
     }
 
+    /**
+     * Parses the COMMAND given by the user.
+     */
     public void parseLine(String... command) throws GitletException {
         if (command.length < 1) {
             throw Utils.error("Please enter a command.");
@@ -52,6 +68,10 @@ public class Controller {
         commands.get(command[0]).accept(command);
     }
 
+    /**
+     * Initializes a gitlet repository.
+     * @param unused placeholder array for parseLine command
+     */
     public void init(String... unused) {
         if (unused.length != 1) {
             throw Utils.error("Incorrect operands.");
@@ -80,6 +100,10 @@ public class Controller {
         committoFile(firstHead);
     }
 
+    /**
+     * Adds the given file into the stage.
+     * @param operands contains given file
+     */
     public void add(String... operands) {
         if (operands.length != 2) {
             throw Utils.error("Incorrect operands.");
@@ -89,6 +113,11 @@ public class Controller {
         updateCommitFile(headHash, head);
     }
 
+    /**
+     * Commits all staged/tracked files in the repository with a
+     * given message.
+     * @param operands contains given message.
+     */
     public void commit(String... operands) {
         if (operands.length != 2) {
             throw Utils.error("Incorrect operands.");
@@ -101,6 +130,12 @@ public class Controller {
         committoFile(newCommit);
     }
 
+    /**
+     * Removes file from the stage. If it is currently being
+     * tracked by the branch, marks it to be removed in the
+     * next commit.
+     * @param operands given file
+     */
     public void remove(String... operands) {
         if (operands.length != 2) {
             throw Utils.error("Incorrect operands.");
@@ -110,6 +145,11 @@ public class Controller {
         updateCommitFile(headHash, head);
     }
 
+    /**
+     * Prints an ancestral list of commit logs starting from the
+     * current branch.
+     * @param unused placeholder array for parseLine command
+     */
     public void log(String... unused) {
         if (unused.length != 1) {
             throw Utils.error("Incorrect operands.");
@@ -130,6 +170,10 @@ public class Controller {
 
     }
 
+    /**
+     * Prints a log of all commits created.
+     * @param unused placeholder array for parseLine command
+     */
     public void globalLog(String... unused) {
         if (unused.length != 1) {
             throw Utils.error("Incorrect operands.");
@@ -143,6 +187,10 @@ public class Controller {
 
     }
 
+    /**
+     * Prints all commit IDs that contain the given message.
+     * @param operands contains given message
+     */
     public void find(String... operands) {
         if (operands.length != 2) {
             throw Utils.error("Incorrect operands.");
@@ -164,6 +212,10 @@ public class Controller {
 
     }
 
+    /**
+     * Prints current status of the repository.
+     * @param unused placeholder array for parseLine command
+     */
     public void status(String... unused) {
         if (unused.length != 1) {
             throw Utils.error("Incorrect operands.");
@@ -176,6 +228,10 @@ public class Controller {
 
     }
 
+    /**
+     * Executes various checkout commands depending on input.
+     * @param operands given input
+     */
     public void checkout(String... operands) {
         Commit commit;
         String fileName;
@@ -234,6 +290,10 @@ public class Controller {
 
     }
 
+    /**
+     * Creates a new branch of the given name.
+     * @param operands contains given name
+     */
     public void branch(String... operands) {
         if (operands.length != 2) {
             throw Utils.error("Incorrect operands.");
@@ -251,6 +311,10 @@ public class Controller {
 
     }
 
+    /**
+     * Removes given branch from the repository.
+     * @param operands contains given branch
+     */
     public void removeBranch(String... operands) {
         if (operands.length != 2) {
             throw Utils.error("Incorrect operands.");
@@ -270,6 +334,10 @@ public class Controller {
 
     }
 
+    /**
+     * Resets repository to the state of the given commit ID.
+     * @param operands contains given commit ID.
+     */
     public void reset(String... operands) {
         if (operands.length != 2) {
             throw Utils.error("Incorrect operands.");
@@ -303,6 +371,10 @@ public class Controller {
 
     }
 
+    /**
+     * Merges the current branch with the given branch.
+     * @param operands contains given branch
+     */
     public void merge(String... operands) {
         if (operands.length != 2) {
             throw Utils.error("Incorrect operands.");
@@ -323,8 +395,33 @@ public class Controller {
         HashMap<String, String> currentFiles = currentHead.getTracked();
         HashMap<String, String> otherFiles = otherHead.getTracked();
         HashMap<String, String> splitFiles = splitPoint.getTracked();
+
+        boolean foundConflict;
+
+        foundConflict = mergeSplit(currentFiles, otherFiles, splitFiles)
+            || mergeOther(currentFiles, otherFiles, splitFiles, branchName);
+
         String headHash = getHeadHash();
+        if (foundConflict) {
+            System.out.println("Encountered a merge conflict.");
+        }
+        Date current = new Date();
+        String message = "Merged " + branchName + " into " + getBranch() + ".";
+        Commit newCommit = new Commit(message, current,
+            headHash, getHeadHash(branchName));
+        committoFile(newCommit);
+    }
+
+    /**
+     * Merges files tracked in CURRENTFILES with the files in SPLITFILES using
+     * the OTHERFILES from the given commit for conditions. Returns whether
+     * there are any conflicts during merging.
+     */
+    private boolean mergeSplit(HashMap<String, String> currentFiles,
+                               HashMap<String, String> otherFiles,
+                               HashMap<String, String> splitFiles) {
         boolean foundConflict = false;
+        String headHash = getHeadHash();
         for (String file : splitFiles.keySet()) {
             if (currentFiles.containsKey(file)
                 && otherFiles.containsKey(file)) {
@@ -338,7 +435,8 @@ public class Controller {
                     }
                 }
             }
-            if (currentFiles.containsKey(file) && !otherFiles.containsKey(file)) {
+            if (currentFiles.containsKey(file)
+                && !otherFiles.containsKey(file)) {
                 if (currentFiles.get(file).equals(splitFiles.get(file))) {
                     remove("rm", file);
                 } else {
@@ -346,7 +444,8 @@ public class Controller {
                     foundConflict = true;
                 }
             }
-            if (!currentFiles.containsKey(file) && otherFiles.containsKey(file)) {
+            if (!currentFiles.containsKey(file)
+                && otherFiles.containsKey(file)) {
                 if (!otherFiles.get(file).equals(splitFiles.get(file))) {
                     fixMergeConflict(file, currentFiles, otherFiles);
                     foundConflict = true;
@@ -354,49 +453,68 @@ public class Controller {
             }
 
         }
+        return foundConflict;
+    }
+
+    /**
+     * Merges files tracked in OTHERFILES with the files in SPLITFILES using
+     * the CURRENTFILES from the given commit for conditions. Returns whether
+     * there are any conflicts during merging. Uses BRANCHNAME.
+     */
+    private boolean mergeOther(HashMap<String, String> currentFiles,
+                               HashMap<String, String> otherFiles,
+                               HashMap<String, String> splitFiles,
+                               String branchName) {
+        boolean foundConflict = false;
         for (String file : otherFiles.keySet()) {
             if (!currentFiles.containsKey(file)
                 && !splitFiles.containsKey(file)) {
                 checkout("checkout", getHeadHash(branchName), "--", file);
                 add("add", file);
             }
-            if (!splitFiles.containsKey(file) && currentFiles.containsKey(file)) {
+            if (!splitFiles.containsKey(file)
+                && currentFiles.containsKey(file)) {
                 if (currentFiles.get(file).equals(otherFiles.get(file))) {
                     fixMergeConflict(file, currentFiles, otherFiles);
                     foundConflict = true;
                 }
             }
         }
-        if (foundConflict) {
-            System.out.println("Encountered a merge conflict.");
-        }
-        Date current = new Date();
-        String message = "Merged " + branchName + " into " + getBranch() + ".";
-        Commit newCommit = new Commit(message, current,
-            headHash, getHeadHash(branchName));
-        committoFile(newCommit);
+        return foundConflict;
     }
 
     /* ---------------------------------------------------- */
     /* ----------------- Helper Functions ----------------- */
     /* ---------------------------------------------------- */
 
+    /**
+     * Updates the current branch to be the NEWBRANCH.
+     */
     public void updateBranch(String newBranch) {
         File headFile = new File(".gitlet/head");
         Utils.writeContents(headFile, newBranch);
     }
 
+    /**
+     * Returns the current branch name.
+     */
     public String getBranch() {
         File headFile = new File(".gitlet/head");
         return Utils.readContentsAsString(headFile);
     }
 
+    /**
+     * Returns the hash of the head of the current branch.
+     */
     public String getHeadHash() {
         File branch = new File(".gitlet/Branch/" + getBranch());
         return Utils.readContentsAsString(branch);
 
     }
 
+    /**
+     * Returns the hash of the head of the given BRANCHNAME.
+     */
     public String getHeadHash(String branchName) {
         File branch = new File(".gitlet/Branch/" + branchName);
         if (!branch.exists()) {
@@ -406,18 +524,27 @@ public class Controller {
 
     }
 
+    /**
+     * Returns the head of the current branch.
+     */
     public Commit getHead() {
         String headHash = getHeadHash(getBranch());
         File actualHead = new File(".gitlet/Commit/" + headHash);
         return Utils.readObject(actualHead, Commit.class);
     }
 
+    /**
+     * Returns the head of the given BRANCHNAME.
+     */
     public Commit getHead(String branchName) {
         String headHash = getHeadHash(branchName);
         File actualHead = new File(".gitlet/Commit/" + headHash);
         return Utils.readObject(actualHead, Commit.class);
     }
 
+    /**
+     * Saves commit C a file in the .gitlet repository.
+     */
     public void committoFile(Commit c) {
         byte[] serialized = Utils.serialize(c);
         String hashed = Utils.sha1(serialized);
@@ -426,10 +553,18 @@ public class Controller {
         Utils.writeContents(headFile, hashed);
     }
 
+    /**
+     * Updates the file with name HASH to contain the serialization of
+     * the given commit C.
+     */
     public void updateCommitFile(String hash, Commit c) {
         c.storeCommit(hash);
     }
 
+    /**
+     * Checks if there are any untracked files between the current branch
+     * and the given OTHER commit.
+     */
     public void checkUntracked(Commit other) {
         List<String> directory = Utils.plainFilenamesIn(".");
         for (String file : directory) {
@@ -444,6 +579,10 @@ public class Controller {
         }
     }
 
+    /**
+     * Prints a list of all the existing branches, with an asterisk next to the
+     * current branch.
+     */
     public void branchesStatus() {
         List<String> branchNames = Utils.plainFilenamesIn(".gitlet/Branch");
         Collections.sort(branchNames);
@@ -458,6 +597,9 @@ public class Controller {
         System.out.println();
     }
 
+    /**
+     * Prints a list of all files in commit C staged to be added.
+     */
     public void stageStatus(Commit c) {
         Set<String> stagedSet = c.getStaged().keySet();
         List<String> stagedNames = new ArrayList<>(stagedSet);
@@ -471,6 +613,9 @@ public class Controller {
 
     }
 
+    /**
+     * Prints a list of all files in commit C staged to be removed.
+     */
     public void removedStatus(Commit c) {
         List<String> removedNames = c.getUntracked();
         Collections.sort(removedNames);
@@ -483,6 +628,10 @@ public class Controller {
 
     }
 
+    /**
+     * Prints a list of all files in commit C that have either
+     * been removed or modified.
+     */
     public void modifiedStatus(Commit c) {
         Set<String> stagedSet = c.getStaged().keySet();
         List<String> removedNames = c.getUntracked();
@@ -531,6 +680,10 @@ public class Controller {
 
     }
 
+    /**
+     * Prints a list of all files in the working directory that are
+     * not being tracked by commit C.
+     */
     public void untrackedStatus(Commit c) {
         Set<String> stagedSet = c.getStaged().keySet();
         List<String> removedNames = c.getUntracked();
@@ -551,6 +704,10 @@ public class Controller {
 
     }
 
+    /**
+     * Returns the splitpoint between the current BRANCHNAME, using the
+     * OTHERHEAD commit as a tracker.
+     */
     public Commit getSplit(String branchName, Commit otherHead) {
         HashSet<String> ancestors = new HashSet<>();
         Commit currentTracker = head;
@@ -584,12 +741,19 @@ public class Controller {
         return splitPoint;
     }
 
+    /**
+     * Clears the stage of the head.
+     */
     public void clearStage() {
         head.getStaged().clear();
         head.getUntracked().clear();
         updateCommitFile(getHeadHash(), head);
     }
 
+    /**
+     * Fixes any merge conflicts in FILE, when merging from CURRENTFILES
+     * and OTHERFILES.
+     */
     public void fixMergeConflict(String file,
                                  HashMap<String, String> currentFiles,
                                  HashMap<String, String> otherFiles) {
