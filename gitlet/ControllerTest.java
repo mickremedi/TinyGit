@@ -197,28 +197,57 @@ public class ControllerTest {
 
         c.parseLine("add", "h.txt");
         c.parseLine("rm", fileOne);
-        c.parseLine("commit", "added h removed fileone");
+
+        Utils.writeContents(f2, "i dont know");
+        c.parseLine("add", fileTwo);
+
+        c.parseLine("commit", "added h removed fileone, change filetwo");
 
         c.parseLine("checkout", "newBranch");
-        c.parseLine("rm", fileTwo);
+
+        Utils.writeContents(f2, "i dont know two");
+        c.parseLine("add", fileTwo);
 
         File f4 = new File("k.txt");
         Utils.writeContents(f4, "k content");
 
         c.parseLine("add", "k.txt");
-        c.parseLine("commit", "added k removed filetwo");
+        c.parseLine("commit", "added k modified filetwo");
 
         c.parseLine("checkout", "master");
         c.parseLine("merge", "newBranch");
         c.parseLine("status");
 
         assertEquals(false, f.exists());
-        assertEquals(false, f2.exists());
+        assertEquals(true, f2.exists());
         assertEquals(true, f3.exists());
         assertEquals(true, f4.exists());
 
         f3.delete();
         f4.delete();
+    }
+
+    @Test
+    public void checkout() throws Exception {
+        File f = new File(fileOne);
+
+        c.parseLine("add", fileOne);
+        c.parseLine("commit", "version one");
+
+        String version1 = c.getHeadHash().substring(0, 6);
+
+        Utils.writeContents(f, "version 2");
+
+        c.parseLine("add", fileOne);
+        c.parseLine("commit", "version two");
+
+        String version2 = c.getHeadHash().substring(0, 6);
+
+        c.parseLine("checkout", version1, "--", fileOne);
+
+        c.parseLine("checkout", version2, "--", fileOne);
+
+
     }
 
 }

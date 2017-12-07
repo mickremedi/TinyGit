@@ -159,7 +159,7 @@ public class Commit implements Serializable {
         }
         File file = null;
         boolean exists = false;
-        if (fileName.length() == 6) {
+        if (fileName.length() < Utils.UID_LENGTH) {
             List<String> commits = Utils.plainFilenamesIn(".gitlet/Commit");
             for (String commitName : commits) {
                 if (commitName.startsWith(fileName)) {

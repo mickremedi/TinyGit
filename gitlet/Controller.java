@@ -398,8 +398,10 @@ public class Controller {
 
         boolean foundConflict;
 
-        foundConflict = mergeSplit(currentFiles, otherFiles, splitFiles)
-            || mergeOther(currentFiles, otherFiles, splitFiles, branchName);
+        foundConflict = mergeSplit(currentFiles, otherFiles, splitFiles);
+        foundConflict = mergeOther(currentFiles,
+            otherFiles, splitFiles, branchName)
+            || foundConflict;
 
         String headHash = getHeadHash();
         if (foundConflict) {
