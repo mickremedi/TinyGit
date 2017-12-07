@@ -289,6 +289,7 @@ public class Controller {
 
 
         c.getStaged().clear();
+        c.getUntracked().clear();
         updateCommitFile(commitID, c);
 
 
@@ -317,35 +318,48 @@ public class Controller {
         HashMap<String, String> currentFiles = currentHead.getTracked();
         HashMap<String, String> otherFiles = otherHead.getTracked();
         HashMap<String, String> splitFiles = splitPoint.getTracked();
+        String headHash = getHeadHash();
         boolean foundConflict = false;
         for (String file : splitFiles.keySet()) {
-            if (currentFiles.containsKey(file) && otherFiles.containsKey(file)) {
+            if (currentFiles.containsKey(file)
+                && otherFiles.containsKey(file)) {
                 if (!otherFiles.get(file).equals(splitFiles.get(file))) {
                     if (currentFiles.get(file).equals(splitFiles.get(file))) {
-                        checkout("checkout", getHeadHash(branchName), "--", file);
+                        checkout("checkout", headHash, "--", file);
                         add("add", file);
                     } else {
-                        File currentFile = new File(".gitlet/"+currentFiles.get(file));
-                        File otherFile = new File(".gitlet/"+otherFiles.get(file));
-                        File realfile = new File(file);
-                        String currentContents = Utils.readContentsAsString(currentFile);
-                        String otherContents = Utils.readContentsAsString(otherFile);
-                        Utils.writeContents(realfile, "<<<<<<< HEAD\n", currentContents, "=======\n", otherContents, ">>>>>>>");
+                        fixMergeConflict(file, currentFiles, otherFiles);
                         foundConflict = true;
-                        add("add", file);
                     }
                 }
             }
             if (currentFiles.containsKey(file) && !otherFiles.containsKey(file)) {
                 if (currentFiles.get(file).equals(splitFiles.get(file))) {
                     remove("rm", file);
+                } else {
+                    fixMergeConflict(file, currentFiles, otherFiles);
+                    foundConflict = true;
                 }
             }
+            if (!currentFiles.containsKey(file) && otherFiles.containsKey(file)) {
+                if (!otherFiles.get(file).equals(splitFiles.get(file))) {
+                    fixMergeConflict(file, currentFiles, otherFiles);
+                    foundConflict = true;
+                }
+            }
+
         }
         for (String file : otherFiles.keySet()) {
-            if (!currentFiles.containsKey(file) && !splitFiles.containsKey(file)) {
+            if (!currentFiles.containsKey(file)
+                && !splitFiles.containsKey(file)) {
                 checkout("checkout", getHeadHash(branchName), "--", file);
-                currentHead.addToStage(file);
+                add("add", file);
+            }
+            if (!splitFiles.containsKey(file) && currentFiles.containsKey(file)) {
+                if (currentFiles.get(file).equals(otherFiles.get(file))) {
+                    fixMergeConflict(file, currentFiles, otherFiles);
+                    foundConflict = true;
+                }
             }
         }
         if (foundConflict) {
@@ -353,7 +367,8 @@ public class Controller {
         }
         Date current = new Date();
         String message = "Merged " + branchName + " into " + getBranch() + ".";
-        Commit newCommit = new Commit(message, current, getHeadHash(), getHeadHash(branchName));
+        Commit newCommit = new Commit(message, current,
+            headHash, getHeadHash(branchName));
         committoFile(newCommit);
     }
 
@@ -545,7 +560,8 @@ public class Controller {
         Commit otherTracker = otherHead;
 
         if (ancestors.contains(getHeadHash(branchName))) {
-            throw Utils.error("Given branch is an ancestor of the current branch.");
+            throw Utils.error("Given branch is an "
+                + "ancestor of the current branch.");
         }
 
         while (otherTracker != null) {
@@ -564,9 +580,28 @@ public class Controller {
     }
 
     public void clearStage() {
-        Commit head = getHead();
         head.getStaged().clear();
         head.getUntracked().clear();
         updateCommitFile(getHeadHash(), head);
+    }
+
+    public void fixMergeConflict(String file,
+                                 HashMap<String, String> currentFiles,
+                                 HashMap<String, String> otherFiles) {
+        File currentFile = new File(".gitlet/" + currentFiles.get(file));
+        File otherFile = new File(".gitlet/" + otherFiles.get(file));
+        File realfile = new File(file);
+        if (!currentFile.exists()) {
+            Utils.writeContents(currentFile, "");
+        }
+        if (!otherFile.exists()) {
+            Utils.writeContents(otherFile, "");
+        }
+        String currentContents = Utils.readContentsAsString(currentFile);
+        String otherContents = Utils.readContentsAsString(otherFile);
+        Utils.writeContents(realfile, "<<<<<<< HEAD\n"
+            , currentContents, "=======\n", otherContents, ">>>>>>>\n");
+        add("add", file);
+
     }
 }

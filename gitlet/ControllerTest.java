@@ -166,6 +166,7 @@ public class ControllerTest {
 
         c.parseLine("checkout", "master");
         c.parseLine("merge", "newBranch");
+        c.parseLine("status");
 
         assertEquals(false, f.exists());
         assertEquals(false, f2.exists());
