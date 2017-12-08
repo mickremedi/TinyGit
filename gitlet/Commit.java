@@ -101,7 +101,7 @@ public class Commit implements Serializable {
     public void addToStage(String fileName) {
         GitletFile file = new GitletFile(fileName);
         if (!file.exists()) {
-            throw Utils.error("GitletFile does not exist.");
+            throw Utils.error("File does not exist.");
         }
         if (_untracked.contains(fileName)) {
             _untracked.remove(fileName);

@@ -294,7 +294,7 @@ public class Controller {
         }
 
         if (!commit.getTracked().containsKey(fileName)) {
-            throw Utils.error("GitletFile does not exist in that commit.");
+            throw Utils.error("File does not exist in that commit.");
         }
 
         String hash = commit.getTracked().get(fileName);
@@ -490,17 +490,18 @@ public class Controller {
 
         List<String> ancestry = checkAncestry(remoteCommit);
 
+        String remotePath = getRemotePath(remoteName);
+
         for (String commitHash : ancestry) {
             GitletFile commitFile = new GitletFile(
                 ".gitlet/Commit/" + commitHash);
-            GitletFile remoteFile = new GitletFile(
-                getRemotePath(remoteName) + "/Commit/" + commitHash);
-            String commitContent = Utils.readContentsAsString(commitFile);
-            Utils.writeContents(remoteFile, commitContent);
+            Commit c = Utils.readObject(commitFile, Commit.class);
+            GitletFile.setRemotePath(
+                remotePath.substring(0, remotePath.length() - 7));
+            c.storeCommit(commitHash);
+            GitletFile.setRemotePath("");
         }
-
         List<String> fileNames = Utils.plainFilenamesIn(".gitlet");
-
         for (String fileName : fileNames) {
             if (!fileName.equals("head")) {
                 GitletFile blobFile = new GitletFile(".gitlet/" + fileName);
@@ -509,23 +510,34 @@ public class Controller {
                 String fileContent = Utils.readContentsAsString(blobFile);
                 Utils.writeContents(remoteFile, fileContent);
             }
-
         }
-
-        String remotePath = getRemotePath(remoteName);
-
+        String headHash = getHeadHash();
         GitletFile.setRemotePath(
             remotePath.substring(0, remotePath.length() - 7));
-
         GitletFile branchFile = new GitletFile(
             ".gitlet/Branch/" + remoteBranch);
         if (!branchFile.exists()) {
             branch("branch", remoteBranch);
-            checkout("checkout", remoteBranch);
         }
-        reset("reset", getHeadHash());
+        GitletFile branch = new GitletFile(".gitlet/Branch/" + remoteBranch);
+        String commitHash = Utils.readContentsAsString(branch);
+        Commit otherCommit = Commit.loadCommit(commitHash);
+        checkUntracked(otherCommit);
+        for (String file : head.getTracked().keySet()) {
+            Utils.restrictedDelete(file);
+        }
+        for (String file : otherCommit.getTracked().keySet()) {
+            String hash = otherCommit.getTracked().get(file);
+            GitletFile copy = new GitletFile(".gitlet/" + hash);
+            String copyContents = Utils.readContentsAsString(copy);
+            GitletFile newFile = new GitletFile(file);
+            Utils.writeContents(newFile, copyContents);
+        }
+        otherCommit.getStaged().clear();
+        updateCommitFile(commitHash, otherCommit);
+        updateBranch(operands[1]);
+        reset("reset", headHash);
         GitletFile.setRemotePath("");
-
     }
 
     /**
@@ -559,12 +571,10 @@ public class Controller {
             getRemotePath(remoteName) + "/Commit");
 
         for (String commitHash : commits) {
-            GitletFile commitFile = new GitletFile(
-                ".gitlet/Commit/" + commitHash);
             GitletFile remoteFile = new GitletFile(
                 getRemotePath(remoteName) + "/Commit/" + commitHash);
-            String commitContent = Utils.readContentsAsString(remoteFile);
-            Utils.writeContents(commitFile, commitContent);
+            Commit c = Utils.readObject(remoteFile, Commit.class);
+            c.storeCommit(commitHash);
         }
 
         List<String> fileNames = Utils.plainFilenamesIn(

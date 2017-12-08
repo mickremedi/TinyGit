@@ -87,6 +87,13 @@ public class ControllerTest {
     }
 
     @Test
+    public void addError() throws Exception {
+        GitletFile f = new GitletFile(fileOne);
+        c.parseLine("add", fileOne);
+
+    }
+
+    @Test
     public void commit() throws Exception {
         c.parseLine("add", fileOne);
         c.parseLine("commit", "this is a test");

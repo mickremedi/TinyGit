@@ -323,6 +323,7 @@ def doTest(test):
                         msg = "incorrect output"
                 if msg != "OK":
                     print("ERROR ({})".format(msg))
+                    # exit(3)
                     reportDetails(test, included_files, line_num)
                     return False
             elif Match(r'=\s*(\S+)\s+(\S+)', line):
@@ -349,6 +350,7 @@ def doTest(test):
     finally:
         if not keep:
             cleanTempDir(tmpdir)
+            # pass
 
 if __name__ == "__main__":
     show = None
