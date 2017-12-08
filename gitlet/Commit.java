@@ -1,6 +1,5 @@
 package gitlet;
 
-import java.io.File;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -100,9 +99,9 @@ public class Commit implements Serializable {
      * Adds the given FILENAME to the stage for the next commit.
      */
     public void addToStage(String fileName) {
-        File file = new File(fileName);
+        GitletFile file = new GitletFile(fileName);
         if (!file.exists()) {
-            throw Utils.error("File does not exist.");
+            throw Utils.error("GitletFile does not exist.");
         }
         if (_untracked.contains(fileName)) {
             _untracked.remove(fileName);
@@ -112,7 +111,7 @@ public class Commit implements Serializable {
         String hash = Utils.sha1(content);
         _staged.put(fileName, hash);
         if (!hash.equals(_tracked.get(fileName))) {
-            File newFile = new File(".gitlet/" + hash);
+            GitletFile newFile = new GitletFile(".gitlet/" + hash);
             Utils.writeContents(newFile, content);
         } else {
             _staged.remove(fileName);
@@ -146,7 +145,7 @@ public class Commit implements Serializable {
      * Stores the commit into the given FILENAME.
      */
     public void storeCommit(String fileName) {
-        File file = new File(".gitlet/Commit/" + fileName);
+        GitletFile file = new GitletFile(".gitlet/Commit/" + fileName);
         Utils.writeObject(file, this);
     }
 
@@ -157,19 +156,19 @@ public class Commit implements Serializable {
         if (fileName.equals(Utils.sha1(Utils.serialize(null)))) {
             return null;
         }
-        File file = null;
+        GitletFile file = null;
         boolean exists = false;
         if (fileName.length() < Utils.UID_LENGTH) {
             List<String> commits = Utils.plainFilenamesIn(".gitlet/Commit");
             for (String commitName : commits) {
                 if (commitName.startsWith(fileName)) {
-                    file = new File(".gitlet/Commit/" + commitName);
+                    file = new GitletFile(".gitlet/Commit/" + commitName);
                     exists = true;
                 }
             }
 
         } else {
-            file = new File(".gitlet/Commit/" + fileName);
+            file = new GitletFile(".gitlet/Commit/" + fileName);
             exists = file.exists();
         }
         if (!exists) {

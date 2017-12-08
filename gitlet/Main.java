@@ -6,7 +6,7 @@ import java.io.IOException;
  * Driver class for Gitlet, the tiny stupid version-control system.
  *
  * @author Michael Remediakis
- * Worked with Mariam Abughosh, Gurpreet Singh, Fatih Metin
+ * Worked with Mariam Abughosh, Gurpreet Singh, Fatih AK
  */
 public class Main {
 

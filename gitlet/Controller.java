@@ -1,6 +1,5 @@
 package gitlet;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -12,6 +11,7 @@ import java.util.function.Consumer;
 
 /**
  * Manages the interpretation of commands given by the user.
+ *
  * @author Michael Remediakis
  */
 public class Controller {
@@ -42,6 +42,11 @@ public class Controller {
         commands.put("rm-branch", this::removeBranch);
         commands.put("reset", this::reset);
         commands.put("merge", this::merge);
+        commands.put("add-remote", this::addRemote);
+        commands.put("rm-remote", this::removeRemote);
+        commands.put("push", this::push);
+        commands.put("fetch", this::fetch);
+        commands.put("pull", this::pull);
     }
 
     /**
@@ -56,7 +61,7 @@ public class Controller {
             throw Utils.error("No command with that name exists.");
         }
 
-        File gitlet = new File(".gitlet");
+        GitletFile gitlet = new GitletFile(".gitlet");
         if (!command[0].equals("init") && !gitlet.exists()) {
             throw Utils.error("Not in an initialized Gitlet directory.");
         }
@@ -70,26 +75,30 @@ public class Controller {
 
     /**
      * Initializes a gitlet repository.
+     *
      * @param unused placeholder array for parseLine command
      */
     public void init(String... unused) {
         if (unused.length != 1) {
             throw Utils.error("Incorrect operands.");
         }
-        File hiddenDir = new File(".gitlet");
+        GitletFile hiddenDir = new GitletFile(".gitlet");
         if (hiddenDir.isDirectory()) {
             throw Utils.error("A Gitlet version-control system "
                 + "already exists in the current directory.");
         }
         hiddenDir.mkdir();
 
-        File commitDir = new File(".gitlet/Commit");
+        GitletFile commitDir = new GitletFile(".gitlet/Commit");
         commitDir.mkdir();
 
-        File branchDir = new File(".gitlet/Branch");
+        GitletFile branchDir = new GitletFile(".gitlet/Branch");
         branchDir.mkdir();
 
-        File masterFile = new File(".gitlet/head");
+        GitletFile remoteDir = new GitletFile(".gitlet/Remote");
+        remoteDir.mkdir();
+
+        GitletFile masterFile = new GitletFile(".gitlet/head");
         Utils.writeContents(masterFile, "master");
 
         Date firstDay = new Date();
@@ -102,6 +111,7 @@ public class Controller {
 
     /**
      * Adds the given file into the stage.
+     *
      * @param operands contains given file
      */
     public void add(String... operands) {
@@ -116,6 +126,7 @@ public class Controller {
     /**
      * Commits all staged/tracked files in the repository with a
      * given message.
+     *
      * @param operands contains given message.
      */
     public void commit(String... operands) {
@@ -134,6 +145,7 @@ public class Controller {
      * Removes file from the stage. If it is currently being
      * tracked by the branch, marks it to be removed in the
      * next commit.
+     *
      * @param operands given file
      */
     public void remove(String... operands) {
@@ -148,6 +160,7 @@ public class Controller {
     /**
      * Prints an ancestral list of commit logs starting from the
      * current branch.
+     *
      * @param unused placeholder array for parseLine command
      */
     public void log(String... unused) {
@@ -172,6 +185,7 @@ public class Controller {
 
     /**
      * Prints a log of all commits created.
+     *
      * @param unused placeholder array for parseLine command
      */
     public void globalLog(String... unused) {
@@ -189,6 +203,7 @@ public class Controller {
 
     /**
      * Prints all commit IDs that contain the given message.
+     *
      * @param operands contains given message
      */
     public void find(String... operands) {
@@ -214,6 +229,7 @@ public class Controller {
 
     /**
      * Prints current status of the repository.
+     *
      * @param unused placeholder array for parseLine command
      */
     public void status(String... unused) {
@@ -230,6 +246,7 @@ public class Controller {
 
     /**
      * Executes various checkout commands depending on input.
+     *
      * @param operands given input
      */
     public void checkout(String... operands) {
@@ -242,7 +259,7 @@ public class Controller {
             commit = Commit.loadCommit(operands[1]);
             fileName = operands[3];
         } else if (operands.length == 2) {
-            File branch = new File(".gitlet/Branch/" + operands[1]);
+            GitletFile branch = new GitletFile(".gitlet/Branch/" + operands[1]);
             if (!branch.exists()) {
                 throw Utils.error("No such branch exists.");
             }
@@ -260,9 +277,9 @@ public class Controller {
             }
             for (String file : otherCommit.getTracked().keySet()) {
                 String hash = otherCommit.getTracked().get(file);
-                File copy = new File(".gitlet/" + hash);
+                GitletFile copy = new GitletFile(".gitlet/" + hash);
                 String copyContents = Utils.readContentsAsString(copy);
-                File newFile = new File(file);
+                GitletFile newFile = new GitletFile(file);
                 Utils.writeContents(newFile, copyContents);
             }
 
@@ -277,14 +294,14 @@ public class Controller {
         }
 
         if (!commit.getTracked().containsKey(fileName)) {
-            throw Utils.error("File does not exist in that commit.");
+            throw Utils.error("GitletFile does not exist in that commit.");
         }
 
         String hash = commit.getTracked().get(fileName);
-        File copy = new File(".gitlet/" + hash);
+        GitletFile copy = new GitletFile(".gitlet/" + hash);
         String copyContents = Utils.readContentsAsString(copy);
 
-        File f = new File(fileName);
+        GitletFile f = new GitletFile(fileName);
 
         Utils.writeContents(f, copyContents);
 
@@ -292,6 +309,7 @@ public class Controller {
 
     /**
      * Creates a new branch of the given name.
+     *
      * @param operands contains given name
      */
     public void branch(String... operands) {
@@ -304,7 +322,7 @@ public class Controller {
             throw Utils.error("A branch with that name already exists.");
         }
 
-        File newBranch = new File(".gitlet/Branch/" + operands[1]);
+        GitletFile newBranch = new GitletFile(".gitlet/Branch/" + operands[1]);
         String headhash = getHeadHash();
         Utils.writeContents(newBranch, headhash);
 
@@ -313,6 +331,7 @@ public class Controller {
 
     /**
      * Removes given branch from the repository.
+     *
      * @param operands contains given branch
      */
     public void removeBranch(String... operands) {
@@ -320,7 +339,7 @@ public class Controller {
             throw Utils.error("Incorrect operands.");
         }
 
-        File branch = new File(".gitlet/Branch/" + operands[1]);
+        GitletFile branch = new GitletFile(".gitlet/Branch/" + operands[1]);
 
         if (!branch.exists()) {
             throw Utils.error("A branch with that name does not exist.");
@@ -336,6 +355,7 @@ public class Controller {
 
     /**
      * Resets repository to the state of the given commit ID.
+     *
      * @param operands contains given commit ID.
      */
     public void reset(String... operands) {
@@ -355,7 +375,7 @@ public class Controller {
             }
         }
 
-        for (String filename: c.getTracked().keySet()) {
+        for (String filename : c.getTracked().keySet()) {
             if (!head.getTracked().containsKey(filename)) {
                 checkout("checkout", commitID, "--", filename);
             }
@@ -366,13 +386,14 @@ public class Controller {
         updateCommitFile(commitID, c);
 
 
-        File branch = new File(".gitlet/Branch/" + getBranch());
+        GitletFile branch = new GitletFile(".gitlet/Branch/" + getBranch());
         Utils.writeContents(branch, commitID);
 
     }
 
     /**
      * Merges the current branch with the given branch.
+     *
      * @param operands contains given branch
      */
     public void merge(String... operands) {
@@ -415,85 +436,178 @@ public class Controller {
     }
 
     /**
-     * Merges files tracked in CURRENTFILES with the files in SPLITFILES using
-     * the OTHERFILES from the given commit for conditions. Returns whether
-     * there are any conflicts during merging.
+     * Creates a connection to a remote repository.
+     * @param operands contains given repository
      */
-    private boolean mergeSplit(HashMap<String, String> currentFiles,
-                               HashMap<String, String> otherFiles,
-                               HashMap<String, String> splitFiles) {
-        boolean foundConflict = false;
-        String headHash = getHeadHash();
-        for (String file : splitFiles.keySet()) {
-            if (currentFiles.containsKey(file)
-                && otherFiles.containsKey(file)) {
-                if (!otherFiles.get(file).equals(splitFiles.get(file))) {
-                    if (currentFiles.get(file).equals(splitFiles.get(file))) {
-                        checkout("checkout", headHash, "--", file);
-                        add("add", file);
-                    } else {
-                        fixMergeConflict(file, currentFiles, otherFiles);
-                        foundConflict = true;
-                    }
-                }
-            }
-            if (currentFiles.containsKey(file)
-                && !otherFiles.containsKey(file)) {
-                if (currentFiles.get(file).equals(splitFiles.get(file))) {
-                    remove("rm", file);
-                } else {
-                    fixMergeConflict(file, currentFiles, otherFiles);
-                    foundConflict = true;
-                }
-            }
-            if (!currentFiles.containsKey(file)
-                && otherFiles.containsKey(file)) {
-                if (!otherFiles.get(file).equals(splitFiles.get(file))) {
-                    fixMergeConflict(file, currentFiles, otherFiles);
-                    foundConflict = true;
-                }
-            }
-
+    public void addRemote(String... operands) {
+        if (operands.length != 3) {
+            throw Utils.error("Incorrect operands.");
         }
-        return foundConflict;
+
+        String separator = GitletFile.separator;
+        List<String> remoteNames = Utils.plainFilenamesIn(".gitlet/Remote");
+        if (remoteNames.contains(operands[1])) {
+            throw Utils.error("A remote with that name already exists.");
+        }
+
+        String filePath = operands[2].replaceAll("/", separator);
+
+        GitletFile newBranch = new GitletFile(".gitlet/Remote/" + operands[1]);
+        Utils.writeContents(newBranch, filePath);
+
     }
 
     /**
-     * Merges files tracked in OTHERFILES with the files in SPLITFILES using
-     * the CURRENTFILES from the given commit for conditions. Returns whether
-     * there are any conflicts during merging. Uses BRANCHNAME.
+     * Removes a connection to a given repository.
+     * @param operands contains given repository
      */
-    private boolean mergeOther(HashMap<String, String> currentFiles,
-                               HashMap<String, String> otherFiles,
-                               HashMap<String, String> splitFiles,
-                               String branchName) {
-        boolean foundConflict = false;
-        for (String file : otherFiles.keySet()) {
-            if (!currentFiles.containsKey(file)
-                && !splitFiles.containsKey(file)) {
-                checkout("checkout", getHeadHash(branchName), "--", file);
-                add("add", file);
-            }
-            if (!splitFiles.containsKey(file)
-                && currentFiles.containsKey(file)) {
-                if (currentFiles.get(file).equals(otherFiles.get(file))) {
-                    fixMergeConflict(file, currentFiles, otherFiles);
-                    foundConflict = true;
-                }
-            }
+    public void removeRemote(String... operands) {
+        if (operands.length != 2) {
+            throw Utils.error("Incorrect operands.");
         }
-        return foundConflict;
+
+        GitletFile branch = new GitletFile(".gitlet/Remote/" + operands[1]);
+
+        if (!branch.exists()) {
+            throw Utils.error("A remote with that name does not exist.");
+        }
+
+        branch.delete();
+
     }
+
+    /**
+     * Pushes all commits and blobs to remote repository.
+     * @param operands given branch
+     */
+    public void push(String... operands) {
+        if (operands.length != 3) {
+            throw Utils.error("Incorrect operands.");
+        }
+        String remoteName = operands[1];
+        String remoteBranch = operands[2];
+        String remoteCommit = getRemoteBranch(remoteName, remoteBranch);
+
+        List<String> ancestry = checkAncestry(remoteCommit);
+
+        for (String commitHash : ancestry) {
+            GitletFile commitFile = new GitletFile(
+                ".gitlet/Commit/" + commitHash);
+            GitletFile remoteFile = new GitletFile(
+                getRemotePath(remoteName) + "/Commit/" + commitHash);
+            String commitContent = Utils.readContentsAsString(commitFile);
+            Utils.writeContents(remoteFile, commitContent);
+        }
+
+        List<String> fileNames = Utils.plainFilenamesIn(".gitlet");
+
+        for (String fileName : fileNames) {
+            if (!fileName.equals("head")) {
+                GitletFile blobFile = new GitletFile(".gitlet/" + fileName);
+                GitletFile remoteFile = new GitletFile(
+                    getRemotePath(remoteName) + "/" + fileName);
+                String fileContent = Utils.readContentsAsString(blobFile);
+                Utils.writeContents(remoteFile, fileContent);
+            }
+
+        }
+
+        String remotePath = getRemotePath(remoteName);
+
+        GitletFile.setRemotePath(
+            remotePath.substring(0, remotePath.length() - 7));
+
+        GitletFile branchFile = new GitletFile(
+            ".gitlet/Branch/" + remoteBranch);
+        if (!branchFile.exists()) {
+            branch("branch", remoteBranch);
+            checkout("checkout", remoteBranch);
+        }
+        reset("reset", getHeadHash());
+        GitletFile.setRemotePath("");
+
+    }
+
+    /**
+     * Fetches commits and blobs from remote repository.
+     * @param operands given branch head
+     */
+    public void fetch(String... operands) {
+        if (operands.length != 3) {
+            throw Utils.error("Incorrect operands.");
+        }
+        String remoteName = operands[1];
+        String remoteBranch = operands[2];
+
+        String branchPath = getRemotePath(remoteName)
+            + "/Branch/" + remoteBranch;
+        GitletFile remoteGitlet = new GitletFile(branchPath);
+        if (!remoteGitlet.exists()) {
+            throw Utils.error("That remote does not have that branch.");
+        }
+
+        GitletFile dir = new GitletFile(".gitlet/Branch/" + remoteName);
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+        GitletFile localBranch = new GitletFile(
+            ".gitlet/Branch/" + remoteName + "/" + remoteBranch);
+        Utils.writeContents(localBranch,
+            Utils.readContentsAsString(remoteGitlet));
+
+        List<String> commits = Utils.plainFilenamesIn(
+            getRemotePath(remoteName) + "/Commit");
+
+        for (String commitHash : commits) {
+            GitletFile commitFile = new GitletFile(
+                ".gitlet/Commit/" + commitHash);
+            GitletFile remoteFile = new GitletFile(
+                getRemotePath(remoteName) + "/Commit/" + commitHash);
+            String commitContent = Utils.readContentsAsString(remoteFile);
+            Utils.writeContents(commitFile, commitContent);
+        }
+
+        List<String> fileNames = Utils.plainFilenamesIn(
+            getRemotePath(remoteName));
+
+        for (String fileName : fileNames) {
+            if (!fileName.equals("head")) {
+                GitletFile blobFile = new GitletFile(".gitlet/" + fileName);
+                GitletFile remoteFile = new GitletFile(
+                    getRemotePath(remoteName) + "/" + fileName);
+                String fileContent = Utils.readContentsAsString(remoteFile);
+                Utils.writeContents(blobFile, fileContent);
+            }
+
+        }
+    }
+
+    /**
+     * Fetches from remote repository and merges with current.
+     * @param operands given branch
+     */
+    public void pull(String... operands) {
+        if (operands.length != 3) {
+            throw Utils.error("Incorrect operands.");
+        }
+        String remoteName = operands[1];
+        String remoteBranch = operands[2];
+        fetch(operands);
+        merge("merge", remoteName + "/" + remoteBranch);
+    }
+
+
 
     /* ---------------------------------------------------- */
     /* ----------------- Helper Functions ----------------- */
     /* ---------------------------------------------------- */
 
+
     /**
      * Updates the current branch to be the NEWBRANCH.
      */
     public void updateBranch(String newBranch) {
-        File headFile = new File(".gitlet/head");
+        GitletFile headFile = new GitletFile(".gitlet/head");
         Utils.writeContents(headFile, newBranch);
     }
 
@@ -501,15 +615,16 @@ public class Controller {
      * Returns the current branch name.
      */
     public String getBranch() {
-        File headFile = new File(".gitlet/head");
+        GitletFile headFile = new GitletFile(".gitlet/head");
         return Utils.readContentsAsString(headFile);
     }
+
 
     /**
      * Returns the hash of the head of the current branch.
      */
     public String getHeadHash() {
-        File branch = new File(".gitlet/Branch/" + getBranch());
+        GitletFile branch = new GitletFile(".gitlet/Branch/" + getBranch());
         return Utils.readContentsAsString(branch);
 
     }
@@ -518,7 +633,7 @@ public class Controller {
      * Returns the hash of the head of the given BRANCHNAME.
      */
     public String getHeadHash(String branchName) {
-        File branch = new File(".gitlet/Branch/" + branchName);
+        GitletFile branch = new GitletFile(".gitlet/Branch/" + branchName);
         if (!branch.exists()) {
             throw Utils.error("A branch with that name does not exist.");
         }
@@ -531,7 +646,7 @@ public class Controller {
      */
     public Commit getHead() {
         String headHash = getHeadHash(getBranch());
-        File actualHead = new File(".gitlet/Commit/" + headHash);
+        GitletFile actualHead = new GitletFile(".gitlet/Commit/" + headHash);
         return Utils.readObject(actualHead, Commit.class);
     }
 
@@ -540,7 +655,7 @@ public class Controller {
      */
     public Commit getHead(String branchName) {
         String headHash = getHeadHash(branchName);
-        File actualHead = new File(".gitlet/Commit/" + headHash);
+        GitletFile actualHead = new GitletFile(".gitlet/Commit/" + headHash);
         return Utils.readObject(actualHead, Commit.class);
     }
 
@@ -551,7 +666,7 @@ public class Controller {
         byte[] serialized = Utils.serialize(c);
         String hashed = Utils.sha1(serialized);
         c.storeCommit(hashed);
-        File headFile = new File(".gitlet/Branch/" + getBranch());
+        GitletFile headFile = new GitletFile(".gitlet/Branch/" + getBranch());
         Utils.writeContents(headFile, hashed);
     }
 
@@ -570,7 +685,7 @@ public class Controller {
     public void checkUntracked(Commit other) {
         List<String> directory = Utils.plainFilenamesIn(".");
         for (String file : directory) {
-            File temp = new File(file);
+            GitletFile temp = new GitletFile(file);
             String hash = Utils.sha1(Utils.readContents(temp));
             if (!head.getTracked().containsKey(file)
                 && other.getTracked().containsKey(file)
@@ -645,7 +760,7 @@ public class Controller {
         System.out.println("=== Modifications Not Staged For Commit ===");
 
         for (String name : stagedSet) {
-            File f = new File(name);
+            GitletFile f = new GitletFile(name);
             if (!f.exists()) {
                 modified.add(name + " (deleted)");
             } else {
@@ -658,7 +773,7 @@ public class Controller {
         }
 
         for (String name : trackedNames) {
-            File f = new File(name);
+            GitletFile f = new GitletFile(name);
             if (!f.exists() && !removedNames.contains(name)) {
                 modified.add(name + " (deleted)");
             }
@@ -732,7 +847,8 @@ public class Controller {
             splitPoint = otherTracker.getParent();
             if (ancestors.contains(otherTracker.getParentHash())) {
                 if (otherTracker.getParentHash().equals(getHeadHash())) {
-                    File f = new File(".gitlet/Branch/" + getBranch());
+                    GitletFile f = new GitletFile(
+                        ".gitlet/Branch/" + getBranch());
                     Utils.writeContents(f, getHeadHash(branchName));
                     throw Utils.error("Current branch fast-forwarded.");
                 }
@@ -759,9 +875,11 @@ public class Controller {
     public void fixMergeConflict(String file,
                                  HashMap<String, String> currentFiles,
                                  HashMap<String, String> otherFiles) {
-        File currentFile = new File(".gitlet/" + currentFiles.get(file));
-        File otherFile = new File(".gitlet/" + otherFiles.get(file));
-        File realfile = new File(file);
+        GitletFile currentFile = new GitletFile(
+            ".gitlet/" + currentFiles.get(file));
+        GitletFile otherFile = new GitletFile(
+            ".gitlet/" + otherFiles.get(file));
+        GitletFile realfile = new GitletFile(file);
         if (!currentFile.exists()) {
             Utils.writeContents(currentFile, "");
         }
@@ -774,5 +892,127 @@ public class Controller {
             , currentContents, "=======\n", otherContents, ">>>>>>>\n");
         add("add", file);
 
+    }
+
+    /**
+     * Merges files tracked in CURRENTFILES with the files in SPLITFILES using
+     * the OTHERFILES from the given commit for conditions. Returns whether
+     * there are any conflicts during merging.
+     */
+    private boolean mergeSplit(HashMap<String, String> currentFiles,
+                               HashMap<String, String> otherFiles,
+                               HashMap<String, String> splitFiles) {
+        boolean foundConflict = false;
+        String headHash = getHeadHash();
+        for (String file : splitFiles.keySet()) {
+            if (currentFiles.containsKey(file)
+                && otherFiles.containsKey(file)) {
+                if (!otherFiles.get(file).equals(splitFiles.get(file))) {
+                    if (currentFiles.get(file).equals(splitFiles.get(file))) {
+                        checkout("checkout", headHash, "--", file);
+                        add("add", file);
+                    } else {
+                        fixMergeConflict(file, currentFiles, otherFiles);
+                        foundConflict = true;
+                    }
+                }
+            }
+            if (currentFiles.containsKey(file)
+                && !otherFiles.containsKey(file)) {
+                if (currentFiles.get(file).equals(splitFiles.get(file))) {
+                    remove("rm", file);
+                } else {
+                    fixMergeConflict(file, currentFiles, otherFiles);
+                    foundConflict = true;
+                }
+            }
+            if (!currentFiles.containsKey(file)
+                && otherFiles.containsKey(file)) {
+                if (!otherFiles.get(file).equals(splitFiles.get(file))) {
+                    fixMergeConflict(file, currentFiles, otherFiles);
+                    foundConflict = true;
+                }
+            }
+
+        }
+        return foundConflict;
+    }
+
+    /**
+     * Merges files tracked in OTHERFILES with the files in SPLITFILES using
+     * the CURRENTFILES from the given commit for conditions. Returns whether
+     * there are any conflicts during merging. Uses BRANCHNAME.
+     */
+    private boolean mergeOther(HashMap<String, String> currentFiles,
+                               HashMap<String, String> otherFiles,
+                               HashMap<String, String> splitFiles,
+                               String branchName) {
+        boolean foundConflict = false;
+        for (String file : otherFiles.keySet()) {
+            if (!currentFiles.containsKey(file)
+                && !splitFiles.containsKey(file)) {
+                checkout("checkout", getHeadHash(branchName), "--", file);
+                add("add", file);
+            }
+            if (!splitFiles.containsKey(file)
+                && currentFiles.containsKey(file)) {
+                if (currentFiles.get(file).equals(otherFiles.get(file))) {
+                    fixMergeConflict(file, currentFiles, otherFiles);
+                    foundConflict = true;
+                }
+            }
+        }
+        return foundConflict;
+    }
+
+    /* ---------------------------------------------------- */
+    /* ------------- Remote Helper Functions -------------- */
+    /* ---------------------------------------------------- */
+
+
+    /**
+     * Returns the hash of the REMOTEBRANCH from the given REMOTE
+     * repository.
+     */
+    public String getRemoteBranch(String remote, String remoteBranch) {
+        String branchPath = getRemotePath(remote) + "/Branch/" + remoteBranch;
+        GitletFile remoteGitlet = new GitletFile(branchPath);
+        return Utils.readContentsAsString(remoteGitlet);
+
+    }
+
+    /**
+     * Returns the path to the REMOTE branch.
+     */
+    public String getRemotePath(String remote) {
+        GitletFile remoteFile = new GitletFile(".gitlet/Remote/" + remote);
+        String remotePath = Utils.readContentsAsString(remoteFile);
+        GitletFile remoteGitlet = new GitletFile(remotePath);
+        if (!remoteGitlet.exists()) {
+            throw Utils.error("Remote directory not found.");
+        }
+        return remotePath;
+
+    }
+
+    /**
+     * Checks whether the REMOTECOMMIT exists in the ancestry of the local
+     * head. Returns a list of future commits if so.
+     */
+    private List<String> checkAncestry(String remoteCommit) {
+        String currentHash = getHeadHash();
+        String nullHash = Utils.sha1(Utils.serialize(null));
+
+        ArrayList<String> history = new ArrayList<>();
+
+        while (!currentHash.equals(nullHash)) {
+            if (remoteCommit.equals(currentHash)) {
+                return history;
+            }
+            history.add(currentHash);
+            Commit current = Commit.loadCommit(currentHash);
+            currentHash = current.getParentHash();
+        }
+        throw Utils.error("Please pull down remote changes before pushing.");
     }
 }

@@ -48,13 +48,13 @@ public class ControllerTest {
     }
 
     public void writeFile(String name, String content) {
-        File f = new File(name);
+        GitletFile f = new GitletFile(name);
         Utils.writeContents(f, content);
     }
 
     @Test
     public void init() throws Exception {
-        File hidden = new File(".gitlet");
+        GitletFile hidden = new GitletFile(".gitlet");
         assertEquals(true, hidden.exists() && hidden.isDirectory());
 
     }
@@ -72,10 +72,10 @@ public class ControllerTest {
         Commit head = c.getHead();
         assertEquals(true, head.getStaged().containsKey(fileOne));
 
-        File trueFile = new File(fileOne);
+        GitletFile trueFile = new GitletFile(fileOne);
 
         String fileHash = head.getStaged().get(fileOne);
-        File hashedFile = new File(".gitlet/" + fileHash);
+        GitletFile hashedFile = new GitletFile(".gitlet/" + fileHash);
         assertEquals(true, hashedFile.exists());
 
         String trueFileContents = Utils.readContentsAsString(trueFile);
@@ -112,7 +112,7 @@ public class ControllerTest {
         assertEquals(true, head.getStaged().isEmpty());
         assertEquals(false, head.getTracked().isEmpty());
 
-        File f = new File(fileOne);
+        GitletFile f = new GitletFile(fileOne);
         assertEquals(false, f.exists());
 
         c.parseLine("commit", "test2");
@@ -145,7 +145,7 @@ public class ControllerTest {
 
         c.parseLine("branch", "newBranch");
 
-        File f3 = new File("h.txt");
+        GitletFile f3 = new GitletFile("h.txt");
         Utils.writeContents(f3, "h content");
 
 
@@ -156,7 +156,7 @@ public class ControllerTest {
         c.parseLine("checkout", "newBranch");
         c.parseLine("rm", fileTwo);
 
-        File f4 = new File("k.txt");
+        GitletFile f4 = new GitletFile("k.txt");
         Utils.writeContents(f4, "k content");
 
         c.parseLine("add", "k.txt");
@@ -164,7 +164,7 @@ public class ControllerTest {
 
         c.parseLine("checkout", "master");
 
-        File f5 = new File("m.txt");
+        GitletFile f5 = new GitletFile("m.txt");
         Utils.writeContents(f5, "m content");
 
         c.parseLine("add", "m.txt");
@@ -182,8 +182,8 @@ public class ControllerTest {
 
     @Test
     public void merge() throws Exception {
-        File f = new File(fileOne);
-        File f2 = new File(fileTwo);
+        GitletFile f = new GitletFile(fileOne);
+        GitletFile f2 = new GitletFile(fileTwo);
 
         c.parseLine("add", fileOne);
         c.parseLine("add", fileTwo);
@@ -191,7 +191,7 @@ public class ControllerTest {
 
         c.parseLine("branch", "newBranch");
 
-        File f3 = new File("h.txt");
+        GitletFile f3 = new GitletFile("h.txt");
         Utils.writeContents(f3, "h content");
 
 
@@ -208,7 +208,7 @@ public class ControllerTest {
         Utils.writeContents(f2, "i dont know two");
         c.parseLine("add", fileTwo);
 
-        File f4 = new File("k.txt");
+        GitletFile f4 = new GitletFile("k.txt");
         Utils.writeContents(f4, "k content");
 
         c.parseLine("add", "k.txt");
@@ -229,7 +229,7 @@ public class ControllerTest {
 
     @Test
     public void checkout() throws Exception {
-        File f = new File(fileOne);
+        GitletFile f = new GitletFile(fileOne);
 
         c.parseLine("add", fileOne);
         c.parseLine("commit", "version one");
