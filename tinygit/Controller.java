@@ -1,4 +1,4 @@
-package gitlet;
+package tinygit;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -52,7 +52,7 @@ public class Controller {
     /**
      * Parses the COMMAND given by the user.
      */
-    public void parseLine(String... command) throws GitletException {
+    public void parseLine(String... command) throws TinyGitException {
         if (command.length < 1) {
             throw Utils.error("Please enter a command.");
         }
@@ -61,7 +61,7 @@ public class Controller {
             throw Utils.error("No command with that name exists.");
         }
 
-        GitletFile gitlet = new GitletFile(".gitlet");
+        TinyGitFile gitlet = new TinyGitFile(".tinygit");
         if (!command[0].equals("init") && !gitlet.exists()) {
             throw Utils.error("Not in an initialized Gitlet directory.");
         }
@@ -74,7 +74,7 @@ public class Controller {
     }
 
     /**
-     * Initializes a gitlet repository.
+     * Initializes a tinygit repository.
      *
      * @param unused placeholder array for parseLine command
      */
@@ -82,23 +82,23 @@ public class Controller {
         if (unused.length != 1) {
             throw Utils.error("Incorrect operands.");
         }
-        GitletFile hiddenDir = new GitletFile(".gitlet");
+        TinyGitFile hiddenDir = new TinyGitFile(".tinygit");
         if (hiddenDir.isDirectory()) {
             throw Utils.error("A Gitlet version-control system "
                 + "already exists in the current directory.");
         }
         hiddenDir.mkdir();
 
-        GitletFile commitDir = new GitletFile(".gitlet/Commit");
+        TinyGitFile commitDir = new TinyGitFile(".tinygit/Commit");
         commitDir.mkdir();
 
-        GitletFile branchDir = new GitletFile(".gitlet/Branch");
+        TinyGitFile branchDir = new TinyGitFile(".tinygit/Branch");
         branchDir.mkdir();
 
-        GitletFile remoteDir = new GitletFile(".gitlet/Remote");
+        TinyGitFile remoteDir = new TinyGitFile(".tinygit/Remote");
         remoteDir.mkdir();
 
-        GitletFile masterFile = new GitletFile(".gitlet/head");
+        TinyGitFile masterFile = new TinyGitFile(".tinygit/head");
         Utils.writeContents(masterFile, "master");
 
         Date firstDay = new Date();
@@ -192,7 +192,7 @@ public class Controller {
         if (unused.length != 1) {
             throw Utils.error("Incorrect operands.");
         }
-        List<String> commitNames = Utils.plainFilenamesIn(".gitlet/Commit");
+        List<String> commitNames = Utils.plainFilenamesIn(".tinygit/Commit");
         for (String commit : commitNames) {
             System.out.println("===");
             Commit.loadCommit(commit).log(commit);
@@ -212,7 +212,7 @@ public class Controller {
         }
         String message = operands[1].replaceAll("^\"|\"$", "");
 
-        List<String> commitNames = Utils.plainFilenamesIn(".gitlet/Commit");
+        List<String> commitNames = Utils.plainFilenamesIn(".tinygit/Commit");
         boolean found = false;
         for (String commit : commitNames) {
             String curr = Commit.loadCommit(commit).getMessage();
@@ -259,7 +259,7 @@ public class Controller {
             commit = Commit.loadCommit(operands[1]);
             fileName = operands[3];
         } else if (operands.length == 2) {
-            GitletFile branch = new GitletFile(".gitlet/Branch/" + operands[1]);
+            TinyGitFile branch = new TinyGitFile(".tinygit/Branch/" + operands[1]);
             if (!branch.exists()) {
                 throw Utils.error("No such branch exists.");
             }
@@ -277,9 +277,9 @@ public class Controller {
             }
             for (String file : otherCommit.getTracked().keySet()) {
                 String hash = otherCommit.getTracked().get(file);
-                GitletFile copy = new GitletFile(".gitlet/" + hash);
+                TinyGitFile copy = new TinyGitFile(".tinygit/" + hash);
                 String copyContents = Utils.readContentsAsString(copy);
-                GitletFile newFile = new GitletFile(file);
+                TinyGitFile newFile = new TinyGitFile(file);
                 Utils.writeContents(newFile, copyContents);
             }
 
@@ -298,10 +298,10 @@ public class Controller {
         }
 
         String hash = commit.getTracked().get(fileName);
-        GitletFile copy = new GitletFile(".gitlet/" + hash);
+        TinyGitFile copy = new TinyGitFile(".tinygit/" + hash);
         String copyContents = Utils.readContentsAsString(copy);
 
-        GitletFile f = new GitletFile(fileName);
+        TinyGitFile f = new TinyGitFile(fileName);
 
         Utils.writeContents(f, copyContents);
 
@@ -317,12 +317,12 @@ public class Controller {
             throw Utils.error("Incorrect operands.");
         }
 
-        List<String> branchNames = Utils.plainFilenamesIn(".gitlet/Branch");
+        List<String> branchNames = Utils.plainFilenamesIn(".tinygit/Branch");
         if (branchNames.contains(operands[1])) {
             throw Utils.error("A branch with that name already exists.");
         }
 
-        GitletFile newBranch = new GitletFile(".gitlet/Branch/" + operands[1]);
+        TinyGitFile newBranch = new TinyGitFile(".tinygit/Branch/" + operands[1]);
         String headhash = getHeadHash();
         Utils.writeContents(newBranch, headhash);
 
@@ -339,7 +339,7 @@ public class Controller {
             throw Utils.error("Incorrect operands.");
         }
 
-        GitletFile branch = new GitletFile(".gitlet/Branch/" + operands[1]);
+        TinyGitFile branch = new TinyGitFile(".tinygit/Branch/" + operands[1]);
 
         if (!branch.exists()) {
             throw Utils.error("A branch with that name does not exist.");
@@ -386,7 +386,7 @@ public class Controller {
         updateCommitFile(commitID, c);
 
 
-        GitletFile branch = new GitletFile(".gitlet/Branch/" + getBranch());
+        TinyGitFile branch = new TinyGitFile(".tinygit/Branch/" + getBranch());
         Utils.writeContents(branch, commitID);
 
     }
@@ -444,15 +444,15 @@ public class Controller {
             throw Utils.error("Incorrect operands.");
         }
 
-        String separator = GitletFile.separator;
-        List<String> remoteNames = Utils.plainFilenamesIn(".gitlet/Remote");
+        String separator = TinyGitFile.separator;
+        List<String> remoteNames = Utils.plainFilenamesIn(".tinygit/Remote");
         if (remoteNames.contains(operands[1])) {
             throw Utils.error("A remote with that name already exists.");
         }
 
         String filePath = operands[2].replaceAll("/", separator);
 
-        GitletFile newBranch = new GitletFile(".gitlet/Remote/" + operands[1]);
+        TinyGitFile newBranch = new TinyGitFile(".tinygit/Remote/" + operands[1]);
         Utils.writeContents(newBranch, filePath);
 
     }
@@ -466,7 +466,7 @@ public class Controller {
             throw Utils.error("Incorrect operands.");
         }
 
-        GitletFile branch = new GitletFile(".gitlet/Remote/" + operands[1]);
+        TinyGitFile branch = new TinyGitFile(".tinygit/Remote/" + operands[1]);
 
         if (!branch.exists()) {
             throw Utils.error("A remote with that name does not exist.");
@@ -493,33 +493,33 @@ public class Controller {
         String remotePath = getRemotePath(remoteName);
 
         for (String commitHash : ancestry) {
-            GitletFile commitFile = new GitletFile(
-                ".gitlet/Commit/" + commitHash);
+            TinyGitFile commitFile = new TinyGitFile(
+                ".tinygit/Commit/" + commitHash);
             Commit c = Utils.readObject(commitFile, Commit.class);
-            GitletFile.setRemotePath(
+            TinyGitFile.setRemotePath(
                 remotePath.substring(0, remotePath.length() - 7));
             c.storeCommit(commitHash);
-            GitletFile.setRemotePath("");
+            TinyGitFile.setRemotePath("");
         }
-        List<String> fileNames = Utils.plainFilenamesIn(".gitlet");
+        List<String> fileNames = Utils.plainFilenamesIn(".tinygit");
         for (String fileName : fileNames) {
             if (!fileName.equals("head")) {
-                GitletFile blobFile = new GitletFile(".gitlet/" + fileName);
-                GitletFile remoteFile = new GitletFile(
+                TinyGitFile blobFile = new TinyGitFile(".tinygit/" + fileName);
+                TinyGitFile remoteFile = new TinyGitFile(
                     getRemotePath(remoteName) + "/" + fileName);
                 String fileContent = Utils.readContentsAsString(blobFile);
                 Utils.writeContents(remoteFile, fileContent);
             }
         }
         String headHash = getHeadHash();
-        GitletFile.setRemotePath(
+        TinyGitFile.setRemotePath(
             remotePath.substring(0, remotePath.length() - 7));
-        GitletFile branchFile = new GitletFile(
-            ".gitlet/Branch/" + remoteBranch);
+        TinyGitFile branchFile = new TinyGitFile(
+            ".tinygit/Branch/" + remoteBranch);
         if (!branchFile.exists()) {
             branch("branch", remoteBranch);
         }
-        GitletFile branch = new GitletFile(".gitlet/Branch/" + remoteBranch);
+        TinyGitFile branch = new TinyGitFile(".tinygit/Branch/" + remoteBranch);
         String commitHash = Utils.readContentsAsString(branch);
         Commit otherCommit = Commit.loadCommit(commitHash);
         checkUntracked(otherCommit);
@@ -528,16 +528,16 @@ public class Controller {
         }
         for (String file : otherCommit.getTracked().keySet()) {
             String hash = otherCommit.getTracked().get(file);
-            GitletFile copy = new GitletFile(".gitlet/" + hash);
+            TinyGitFile copy = new TinyGitFile(".tinygit/" + hash);
             String copyContents = Utils.readContentsAsString(copy);
-            GitletFile newFile = new GitletFile(file);
+            TinyGitFile newFile = new TinyGitFile(file);
             Utils.writeContents(newFile, copyContents);
         }
         otherCommit.getStaged().clear();
         updateCommitFile(commitHash, otherCommit);
         updateBranch(operands[1]);
         reset("reset", headHash);
-        GitletFile.setRemotePath("");
+        TinyGitFile.setRemotePath("");
     }
 
     /**
@@ -553,17 +553,17 @@ public class Controller {
 
         String branchPath = getRemotePath(remoteName)
             + "/Branch/" + remoteBranch;
-        GitletFile remoteGitlet = new GitletFile(branchPath);
+        TinyGitFile remoteGitlet = new TinyGitFile(branchPath);
         if (!remoteGitlet.exists()) {
             throw Utils.error("That remote does not have that branch.");
         }
 
-        GitletFile dir = new GitletFile(".gitlet/Branch/" + remoteName);
+        TinyGitFile dir = new TinyGitFile(".tinygit/Branch/" + remoteName);
         if (!dir.exists()) {
             dir.mkdir();
         }
-        GitletFile localBranch = new GitletFile(
-            ".gitlet/Branch/" + remoteName + "/" + remoteBranch);
+        TinyGitFile localBranch = new TinyGitFile(
+            ".tinygit/Branch/" + remoteName + "/" + remoteBranch);
         Utils.writeContents(localBranch,
             Utils.readContentsAsString(remoteGitlet));
 
@@ -571,7 +571,7 @@ public class Controller {
             getRemotePath(remoteName) + "/Commit");
 
         for (String commitHash : commits) {
-            GitletFile remoteFile = new GitletFile(
+            TinyGitFile remoteFile = new TinyGitFile(
                 getRemotePath(remoteName) + "/Commit/" + commitHash);
             Commit c = Utils.readObject(remoteFile, Commit.class);
             c.storeCommit(commitHash);
@@ -582,8 +582,8 @@ public class Controller {
 
         for (String fileName : fileNames) {
             if (!fileName.equals("head")) {
-                GitletFile blobFile = new GitletFile(".gitlet/" + fileName);
-                GitletFile remoteFile = new GitletFile(
+                TinyGitFile blobFile = new TinyGitFile(".tinygit/" + fileName);
+                TinyGitFile remoteFile = new TinyGitFile(
                     getRemotePath(remoteName) + "/" + fileName);
                 String fileContent = Utils.readContentsAsString(remoteFile);
                 Utils.writeContents(blobFile, fileContent);
@@ -617,7 +617,7 @@ public class Controller {
      * Updates the current branch to be the NEWBRANCH.
      */
     public void updateBranch(String newBranch) {
-        GitletFile headFile = new GitletFile(".gitlet/head");
+        TinyGitFile headFile = new TinyGitFile(".tinygit/head");
         Utils.writeContents(headFile, newBranch);
     }
 
@@ -625,7 +625,7 @@ public class Controller {
      * Returns the current branch name.
      */
     public String getBranch() {
-        GitletFile headFile = new GitletFile(".gitlet/head");
+        TinyGitFile headFile = new TinyGitFile(".tinygit/head");
         return Utils.readContentsAsString(headFile);
     }
 
@@ -634,7 +634,7 @@ public class Controller {
      * Returns the hash of the head of the current branch.
      */
     public String getHeadHash() {
-        GitletFile branch = new GitletFile(".gitlet/Branch/" + getBranch());
+        TinyGitFile branch = new TinyGitFile(".tinygit/Branch/" + getBranch());
         return Utils.readContentsAsString(branch);
 
     }
@@ -643,7 +643,7 @@ public class Controller {
      * Returns the hash of the head of the given BRANCHNAME.
      */
     public String getHeadHash(String branchName) {
-        GitletFile branch = new GitletFile(".gitlet/Branch/" + branchName);
+        TinyGitFile branch = new TinyGitFile(".tinygit/Branch/" + branchName);
         if (!branch.exists()) {
             throw Utils.error("A branch with that name does not exist.");
         }
@@ -656,7 +656,7 @@ public class Controller {
      */
     public Commit getHead() {
         String headHash = getHeadHash(getBranch());
-        GitletFile actualHead = new GitletFile(".gitlet/Commit/" + headHash);
+        TinyGitFile actualHead = new TinyGitFile(".tinygit/Commit/" + headHash);
         return Utils.readObject(actualHead, Commit.class);
     }
 
@@ -665,18 +665,18 @@ public class Controller {
      */
     public Commit getHead(String branchName) {
         String headHash = getHeadHash(branchName);
-        GitletFile actualHead = new GitletFile(".gitlet/Commit/" + headHash);
+        TinyGitFile actualHead = new TinyGitFile(".tinygit/Commit/" + headHash);
         return Utils.readObject(actualHead, Commit.class);
     }
 
     /**
-     * Saves commit C a file in the .gitlet repository.
+     * Saves commit C a file in the .tinygit repository.
      */
     public void committoFile(Commit c) {
         byte[] serialized = Utils.serialize(c);
         String hashed = Utils.sha1(serialized);
         c.storeCommit(hashed);
-        GitletFile headFile = new GitletFile(".gitlet/Branch/" + getBranch());
+        TinyGitFile headFile = new TinyGitFile(".tinygit/Branch/" + getBranch());
         Utils.writeContents(headFile, hashed);
     }
 
@@ -695,7 +695,7 @@ public class Controller {
     public void checkUntracked(Commit other) {
         List<String> directory = Utils.plainFilenamesIn(".");
         for (String file : directory) {
-            GitletFile temp = new GitletFile(file);
+            TinyGitFile temp = new TinyGitFile(file);
             String hash = Utils.sha1(Utils.readContents(temp));
             if (!head.getTracked().containsKey(file)
                 && other.getTracked().containsKey(file)
@@ -711,7 +711,7 @@ public class Controller {
      * current branch.
      */
     public void branchesStatus() {
-        List<String> branchNames = Utils.plainFilenamesIn(".gitlet/Branch");
+        List<String> branchNames = Utils.plainFilenamesIn(".tinygit/Branch");
         Collections.sort(branchNames);
 
         System.out.println("=== Branches ===");
@@ -770,7 +770,7 @@ public class Controller {
         System.out.println("=== Modifications Not Staged For Commit ===");
 
         for (String name : stagedSet) {
-            GitletFile f = new GitletFile(name);
+            TinyGitFile f = new TinyGitFile(name);
             if (!f.exists()) {
                 modified.add(name + " (deleted)");
             } else {
@@ -783,7 +783,7 @@ public class Controller {
         }
 
         for (String name : trackedNames) {
-            GitletFile f = new GitletFile(name);
+            TinyGitFile f = new TinyGitFile(name);
             if (!f.exists() && !removedNames.contains(name)) {
                 modified.add(name + " (deleted)");
             }
@@ -857,8 +857,8 @@ public class Controller {
             splitPoint = otherTracker.getParent();
             if (ancestors.contains(otherTracker.getParentHash())) {
                 if (otherTracker.getParentHash().equals(getHeadHash())) {
-                    GitletFile f = new GitletFile(
-                        ".gitlet/Branch/" + getBranch());
+                    TinyGitFile f = new TinyGitFile(
+                        ".tinygit/Branch/" + getBranch());
                     Utils.writeContents(f, getHeadHash(branchName));
                     throw Utils.error("Current branch fast-forwarded.");
                 }
@@ -885,11 +885,11 @@ public class Controller {
     public void fixMergeConflict(String file,
                                  HashMap<String, String> currentFiles,
                                  HashMap<String, String> otherFiles) {
-        GitletFile currentFile = new GitletFile(
-            ".gitlet/" + currentFiles.get(file));
-        GitletFile otherFile = new GitletFile(
-            ".gitlet/" + otherFiles.get(file));
-        GitletFile realfile = new GitletFile(file);
+        TinyGitFile currentFile = new TinyGitFile(
+            ".tinygit/" + currentFiles.get(file));
+        TinyGitFile otherFile = new TinyGitFile(
+            ".tinygit/" + otherFiles.get(file));
+        TinyGitFile realfile = new TinyGitFile(file);
         if (!currentFile.exists()) {
             Utils.writeContents(currentFile, "");
         }
@@ -986,7 +986,7 @@ public class Controller {
      */
     public String getRemoteBranch(String remote, String remoteBranch) {
         String branchPath = getRemotePath(remote) + "/Branch/" + remoteBranch;
-        GitletFile remoteGitlet = new GitletFile(branchPath);
+        TinyGitFile remoteGitlet = new TinyGitFile(branchPath);
         return Utils.readContentsAsString(remoteGitlet);
 
     }
@@ -995,9 +995,9 @@ public class Controller {
      * Returns the path to the REMOTE branch.
      */
     public String getRemotePath(String remote) {
-        GitletFile remoteFile = new GitletFile(".gitlet/Remote/" + remote);
+        TinyGitFile remoteFile = new TinyGitFile(".tinygit/Remote/" + remote);
         String remotePath = Utils.readContentsAsString(remoteFile);
-        GitletFile remoteGitlet = new GitletFile(remotePath);
+        TinyGitFile remoteGitlet = new TinyGitFile(remotePath);
         if (!remoteGitlet.exists()) {
             throw Utils.error("Remote directory not found.");
         }

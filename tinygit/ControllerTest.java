@@ -1,4 +1,4 @@
-package gitlet;
+package tinygit;
 
 import org.junit.After;
 import org.junit.Before;
@@ -37,7 +37,7 @@ public class ControllerTest {
         System.setOut(null);
         Utils.restrictedDelete(fileOne);
         Utils.restrictedDelete(fileTwo);
-        Path dirPath = Paths.get("./.gitlet");
+        Path dirPath = Paths.get("./.tinygit");
         if (Files.exists(dirPath)) {
             Files.walk(dirPath, FileVisitOption.FOLLOW_LINKS)
                 .sorted(Comparator.reverseOrder())
@@ -48,13 +48,13 @@ public class ControllerTest {
     }
 
     public void writeFile(String name, String content) {
-        GitletFile f = new GitletFile(name);
+        TinyGitFile f = new TinyGitFile(name);
         Utils.writeContents(f, content);
     }
 
     @Test
     public void init() throws Exception {
-        GitletFile hidden = new GitletFile(".gitlet");
+        TinyGitFile hidden = new TinyGitFile(".tinygit");
         assertEquals(true, hidden.exists() && hidden.isDirectory());
 
     }
@@ -72,10 +72,10 @@ public class ControllerTest {
         Commit head = c.getHead();
         assertEquals(true, head.getStaged().containsKey(fileOne));
 
-        GitletFile trueFile = new GitletFile(fileOne);
+        TinyGitFile trueFile = new TinyGitFile(fileOne);
 
         String fileHash = head.getStaged().get(fileOne);
-        GitletFile hashedFile = new GitletFile(".gitlet/" + fileHash);
+        TinyGitFile hashedFile = new TinyGitFile(".tinygit/" + fileHash);
         assertEquals(true, hashedFile.exists());
 
         String trueFileContents = Utils.readContentsAsString(trueFile);
@@ -88,7 +88,7 @@ public class ControllerTest {
 
     @Test
     public void addError() throws Exception {
-        GitletFile f = new GitletFile(fileOne);
+        TinyGitFile f = new TinyGitFile(fileOne);
         c.parseLine("add", fileOne);
 
     }
@@ -119,7 +119,7 @@ public class ControllerTest {
         assertEquals(true, head.getStaged().isEmpty());
         assertEquals(false, head.getTracked().isEmpty());
 
-        GitletFile f = new GitletFile(fileOne);
+        TinyGitFile f = new TinyGitFile(fileOne);
         assertEquals(false, f.exists());
 
         c.parseLine("commit", "test2");
@@ -152,7 +152,7 @@ public class ControllerTest {
 
         c.parseLine("branch", "newBranch");
 
-        GitletFile f3 = new GitletFile("h.txt");
+        TinyGitFile f3 = new TinyGitFile("h.txt");
         Utils.writeContents(f3, "h content");
 
 
@@ -163,7 +163,7 @@ public class ControllerTest {
         c.parseLine("checkout", "newBranch");
         c.parseLine("rm", fileTwo);
 
-        GitletFile f4 = new GitletFile("k.txt");
+        TinyGitFile f4 = new TinyGitFile("k.txt");
         Utils.writeContents(f4, "k content");
 
         c.parseLine("add", "k.txt");
@@ -171,7 +171,7 @@ public class ControllerTest {
 
         c.parseLine("checkout", "master");
 
-        GitletFile f5 = new GitletFile("m.txt");
+        TinyGitFile f5 = new TinyGitFile("m.txt");
         Utils.writeContents(f5, "m content");
 
         c.parseLine("add", "m.txt");
@@ -189,8 +189,8 @@ public class ControllerTest {
 
     @Test
     public void merge() throws Exception {
-        GitletFile f = new GitletFile(fileOne);
-        GitletFile f2 = new GitletFile(fileTwo);
+        TinyGitFile f = new TinyGitFile(fileOne);
+        TinyGitFile f2 = new TinyGitFile(fileTwo);
 
         c.parseLine("add", fileOne);
         c.parseLine("add", fileTwo);
@@ -198,7 +198,7 @@ public class ControllerTest {
 
         c.parseLine("branch", "newBranch");
 
-        GitletFile f3 = new GitletFile("h.txt");
+        TinyGitFile f3 = new TinyGitFile("h.txt");
         Utils.writeContents(f3, "h content");
 
 
@@ -215,7 +215,7 @@ public class ControllerTest {
         Utils.writeContents(f2, "i dont know two");
         c.parseLine("add", fileTwo);
 
-        GitletFile f4 = new GitletFile("k.txt");
+        TinyGitFile f4 = new TinyGitFile("k.txt");
         Utils.writeContents(f4, "k content");
 
         c.parseLine("add", "k.txt");
@@ -236,7 +236,7 @@ public class ControllerTest {
 
     @Test
     public void checkout() throws Exception {
-        GitletFile f = new GitletFile(fileOne);
+        TinyGitFile f = new TinyGitFile(fileOne);
 
         c.parseLine("add", fileOne);
         c.parseLine("commit", "version one");

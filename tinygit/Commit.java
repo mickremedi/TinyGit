@@ -1,4 +1,4 @@
-package gitlet;
+package tinygit;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
@@ -27,8 +27,8 @@ public class Commit implements Serializable {
      */
     private String _parentReference;
     /**
-     * If this commit was caused by a merge, this is a
-     * reference to the other parent commit.
+     * If this commit was caused by a merge, this is a reference to the other parent
+     * commit.
      */
     private String _otherParentReference = null;
     /**
@@ -40,14 +40,13 @@ public class Commit implements Serializable {
      */
     private HashMap<String, String> _staged;
     /**
-     * A map to all of the files that are about to be
-     * removed in the next commit.
+     * A map to all of the files that are about to be removed in the next commit.
      */
     private ArrayList<String> _untracked;
 
     /**
-     * Initializes a new commit with the given MESSAGE, TIME of commit,
-     * and a reference to the PARENT commit.
+     * Initializes a new commit with the given MESSAGE, TIME of commit, and a
+     * reference to the PARENT commit.
      */
     public Commit(String message, Date time, String parent) {
         if (message.length() == 0) {
@@ -67,19 +66,18 @@ public class Commit implements Serializable {
     }
 
     /**
-     * Initializes a new commit caused by a merge with the given MESSAGE,
-     * TIME of commit, and a reference to the PARENT commit as well as the
-     * OTHERPARENT of this commit.
+     * Initializes a new commit caused by a merge with the given MESSAGE, TIME of
+     * commit, and a reference to the PARENT commit as well as the OTHERPARENT of
+     * this commit.
      */
-    public Commit(String message, Date time, String parent,
-                  String otherParent) {
+    public Commit(String message, Date time, String parent, String otherParent) {
         this(message, time, parent);
         _otherParentReference = otherParent;
     }
 
     /**
-     * Tracks any files tracked/staged from the PARENT commit and
-     * removes any files marked to be removed.
+     * Tracks any files tracked/staged from the PARENT commit and removes any files
+     * marked to be removed.
      */
     private void fillFileReferences(Commit parent) {
         if (parent._staged.isEmpty() && parent.getUntracked().isEmpty()) {
@@ -99,7 +97,7 @@ public class Commit implements Serializable {
      * Adds the given FILENAME to the stage for the next commit.
      */
     public void addToStage(String fileName) {
-        GitletFile file = new GitletFile(fileName);
+        TinyGitFile file = new TinyGitFile(fileName);
         if (!file.exists()) {
             throw Utils.error("File does not exist.");
         }
@@ -111,7 +109,7 @@ public class Commit implements Serializable {
         String hash = Utils.sha1(content);
         _staged.put(fileName, hash);
         if (!hash.equals(_tracked.get(fileName))) {
-            GitletFile newFile = new GitletFile(".gitlet/" + hash);
+            TinyGitFile newFile = new TinyGitFile(".tinygit/" + hash);
             Utils.writeContents(newFile, content);
         } else {
             _staged.remove(fileName);
@@ -119,9 +117,8 @@ public class Commit implements Serializable {
     }
 
     /**
-     * Removes the given FILENAME from the stage and if it is
-     * currently being tracked by the commit, marks it to be
-     * untracked in the next commit.
+     * Removes the given FILENAME from the stage and if it is currently being
+     * tracked by the commit, marks it to be untracked in the next commit.
      */
     public void remove(String fileName) {
         if (!_staged.containsKey(fileName) && !_tracked.containsKey(fileName)) {
@@ -145,7 +142,7 @@ public class Commit implements Serializable {
      * Stores the commit into the given FILENAME.
      */
     public void storeCommit(String fileName) {
-        GitletFile file = new GitletFile(".gitlet/Commit/" + fileName);
+        TinyGitFile file = new TinyGitFile(".tinygit/Commit/" + fileName);
         Utils.writeObject(file, this);
     }
 
@@ -156,19 +153,19 @@ public class Commit implements Serializable {
         if (fileName.equals(Utils.sha1(Utils.serialize(null)))) {
             return null;
         }
-        GitletFile file = null;
+        TinyGitFile file = null;
         boolean exists = false;
         if (fileName.length() < Utils.UID_LENGTH) {
-            List<String> commits = Utils.plainFilenamesIn(".gitlet/Commit");
+            List<String> commits = Utils.plainFilenamesIn(".tinygit/Commit");
             for (String commitName : commits) {
                 if (commitName.startsWith(fileName)) {
-                    file = new GitletFile(".gitlet/Commit/" + commitName);
+                    file = new TinyGitFile(".tinygit/Commit/" + commitName);
                     exists = true;
                 }
             }
 
         } else {
-            file = new GitletFile(".gitlet/Commit/" + fileName);
+            file = new TinyGitFile(".tinygit/Commit/" + fileName);
             exists = file.exists();
         }
         if (!exists) {
@@ -178,8 +175,7 @@ public class Commit implements Serializable {
     }
 
     /**
-     * Prints out the log of the commit, with the given HASH of the
-     * commit.
+     * Prints out the log of the commit, with the given HASH of the commit.
      *
      * @param hash
      */
@@ -187,18 +183,15 @@ public class Commit implements Serializable {
         System.out.println("commit " + hash);
 
         if (_otherParentReference != null) {
-            System.out.println("Merge: " + _parentReference.substring(0, 7)
-                + " " + _otherParentReference.substring(0, 7));
+            System.out.println(
+                    "Merge: " + _parentReference.substring(0, 7) + " " + _otherParentReference.substring(0, 7));
         }
 
-        SimpleDateFormat formatter = new SimpleDateFormat(
-            "EEE MMM d HH:mm:ss yyyy Z"
-        );
+        SimpleDateFormat formatter = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z");
         System.out.println("Date: " + formatter.format(_time));
         System.out.println(this._message);
 
     }
-
 
     /**
      * Returns the parent of the commit.
@@ -236,8 +229,7 @@ public class Commit implements Serializable {
     }
 
     /**
-     * Returns a map of all the files marked to be removed for the
-     * next commit.
+     * Returns a map of all the files marked to be removed for the next commit.
      */
     public ArrayList<String> getUntracked() {
         return _untracked;

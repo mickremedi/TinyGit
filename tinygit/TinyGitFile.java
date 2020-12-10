@@ -1,4 +1,4 @@
-package gitlet;
+package tinygit;
 
 import java.io.File;
 
@@ -7,7 +7,7 @@ import java.io.File;
  * at the local vs remote repository.
  * @author Michael Remediakis, Fatih AK
  */
-public class GitletFile extends File {
+public class TinyGitFile extends File {
 
     /**
      * Preceeding path to file.
@@ -17,7 +17,7 @@ public class GitletFile extends File {
     /**
      * Creates a path with given PATHNAME.
      */
-    public GitletFile(String pathname) {
+    public TinyGitFile(String pathname) {
         super(_remotePath + pathname);
     }
 
@@ -25,7 +25,7 @@ public class GitletFile extends File {
      * Creates a path with given PARENT file and
      * CHILD path.
      */
-    public GitletFile(File parent, String child) {
+    public TinyGitFile(File parent, String child) {
         super(parent, _remotePath + child);
     }
 
@@ -33,6 +33,6 @@ public class GitletFile extends File {
      * Sets the REMOTEPATH variable.
      */
     public static void setRemotePath(String remotePath) {
-        GitletFile._remotePath = remotePath;
+        TinyGitFile._remotePath = remotePath;
     }
 }

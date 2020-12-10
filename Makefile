@@ -16,7 +16,7 @@
 # that you ask questions.  The Lab Reader contains documentation.
 
 # Name of package containing main procedure 
-PACKAGE = gitlet
+PACKAGE = tinygit
 
 STYLEPROG = style61b
 
@@ -43,7 +43,7 @@ integration: default
 	$(RMAKE) -C testing PYTHON=$(PYTHON) TESTER_FLAGS="$(TESTER_FLAGS)" check
 
 unit: default
-	$(RMAKE) -C gitlet unit
+	$(RMAKE) -C tinygit unit
 
 style:
 	$(RMAKE) -C $(PACKAGE) STYLEPROG=$(STYLEPROG) style

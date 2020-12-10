@@ -1,4 +1,4 @@
-package gitlet;
+package tinygit;
 
 import java.io.IOException;
 
@@ -11,14 +11,14 @@ import java.io.IOException;
 public class Main {
 
     /**
-     * Usage: java gitlet.Main ARGS, where ARGS contains
+     * Usage: java tinygit.Main ARGS, where ARGS contains
      * <COMMAND> <OPERAND> ....
      */
     public static void main(String... args) throws IOException {
         Controller controller = new Controller();
         try {
             controller.parseLine(args);
-        } catch (GitletException e) {
+        } catch (TinyGitException e) {
             System.out.println(e.getMessage());
             System.exit(0);
         }

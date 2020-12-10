@@ -57,7 +57,7 @@ integration:
 	$(RMAKE) -C .. PYTHON=$(PYTHON) integration
 
 unit: default
-	java -ea -cp $(CPATH) gitlet.UnitTest
+	java -ea -cp $(CPATH) tinygit.UnitTest
 
 # 'make clean' will clean up stuff you can reconstruct.
 clean:

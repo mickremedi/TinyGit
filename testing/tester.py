@@ -14,9 +14,9 @@ Usage: python3 tester.py OPTIONS TEST.in ...
        --show=N       Show details on up to N tests.
        --show=all     Show details on all tests.
        --keep         Keep test directories
-       --progdir=DIR  Directory or JAR files containing gitlet application
+       --progdir=DIR  Directory or JAR files containing tinygit application
        --timeout=SEC  Default number of seconds allowed to each execution
-                      of gitlet.
+                      of tinygit.
        --src=SRC      Use SRC instead of "src" as the subdirectory containing
                       files referenced by + and =.
        --tolerance=N  Set the maximum allowed edit distance between program
@@ -43,7 +43,7 @@ The instructions each have one of the following forms:
           the main directory for this test.  If DIR is missing, changes
           back to the default directory.  This command is principally
           intended to let you set up remote repositories.
-   T N    Set the timeout for gitlet commands in the rest of this test to N
+   T N    Set the timeout for tinygit commands in the rest of this test to N
           seconds.
    + NAME F
           Copy the contents of src/F into a file named NAME.
@@ -54,12 +54,12 @@ The instructions each have one of the following forms:
    LINE2
    ...
    <<<
-          Run gitlet.Main with COMMAND ARGUMENTS as its parameters.  Compare
+          Run tinygit.Main with COMMAND ARGUMENTS as its parameters.  Compare
           its output with LINE1, LINE2, etc., reporting an error if there is
           "sufficient" discrepency.  The <<< delimiter may be followed by
           an asterisk (*), in which case, the preceding lines are treated as 
           Python regular expressions and matched accordingly. The directory
-          or JAR file containing the gitlet.Main program is assumed to be
+          or JAR file containing the tinygit.Main program is assumed to be
           in directory DIR specifed by --progdir (default is ..).
    = NAME F
           Check that the file named NAME is identical to src/F, and report an
@@ -84,7 +84,7 @@ TEST.dir).
 When finished, reports number of tests passed and failed, and the number of
 faulty TEST.in files."""
 
-GITLET_COMMAND = "java gitlet.Main"
+GITLET_COMMAND = "java tinygit.Main"
 TIMEOUT = 10
 
 def Usage():
@@ -154,7 +154,7 @@ def doExecute(cmnd, dir, timeout):
                            stdin=DEVNULL, stderr=STDOUT, timeout=timeout)
         return "OK", out
     except CalledProcessError as excp:
-        return ("java gitlet.Main exited with code {}".format(excp.args[0]),
+        return ("java tinygit.Main exited with code {}".format(excp.args[0]),
                 excp.output)
     except TimeoutExpired:
         return "timeout", None

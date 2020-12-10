@@ -1,4 +1,4 @@
-package gitlet;
+package tinygit;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -64,10 +64,10 @@ class Utils {
     /** Deletes FILE if it exists and is not a directory.  Returns true
      *  if FILE was deleted, and false otherwise.  Refuses to delete FILE
      *  and throws IllegalArgumentException unless the directory designated by
-     *  FILE also contains a directory named .gitlet. */
-    static boolean restrictedDelete(GitletFile file) {
-        if (!(new GitletFile(file.getParentFile(), ".gitlet")).isDirectory()) {
-            throw new IllegalArgumentException("not .gitlet working directory");
+     *  FILE also contains a directory named .tinygit. */
+    static boolean restrictedDelete(TinyGitFile file) {
+        if (!(new TinyGitFile(file.getParentFile(), ".tinygit")).isDirectory()) {
+            throw new IllegalArgumentException("not .tinygit working directory");
         }
         if (!file.isDirectory()) {
             return file.delete();
@@ -79,9 +79,9 @@ class Utils {
     /** Deletes the file named FILE if it exists and is not a directory.
      *  Returns true if FILE was deleted, and false otherwise.  Refuses
      *  to delete FILE and throws IllegalArgumentException unless the
-     *  directory designated by FILE also contains a directory named .gitlet. */
+     *  directory designated by FILE also contains a directory named .tinygit. */
     static boolean restrictedDelete(String file) {
-        return restrictedDelete(new GitletFile(file));
+        return restrictedDelete(new TinyGitFile(file));
     }
 
     /* READING AND WRITING FILE CONTENTS */
@@ -89,7 +89,7 @@ class Utils {
     /** Return the entire contents of FILE as a byte array.  FILE must
      *  be a normal file.  Throws IllegalArgumentException
      *  in case of problems. */
-    static byte[] readContents(GitletFile file) {
+    static byte[] readContents(TinyGitFile file) {
         if (!file.isFile()) {
             throw new IllegalArgumentException("must be a normal file");
         }
@@ -103,7 +103,7 @@ class Utils {
     /** Return the entire contents of FILE as a String.  FILE must
      *  be a normal file.  Throws IllegalArgumentException
      *  in case of problems. */
-    static String readContentsAsString(GitletFile file) {
+    static String readContentsAsString(TinyGitFile file) {
         return new String(readContents(file), StandardCharsets.UTF_8);
     }
 
@@ -149,7 +149,7 @@ class Utils {
     }
 
     /** Write OBJ to FILE. */
-    static void writeObject(GitletFile file, Serializable obj) {
+    static void writeObject(TinyGitFile file, Serializable obj) {
         writeContents(file, serialize(obj));
     }
 
@@ -160,14 +160,14 @@ class Utils {
         new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
-                return new GitletFile(dir, name).isFile();
+                return new TinyGitFile(dir, name).isFile();
             }
         };
 
     /** Returns a list of the names of all plain files in the directory DIR, in
      *  lexicographic order as Java Strings.  Returns null if DIR does
      *  not denote a directory. */
-    static List<String> plainFilenamesIn(GitletFile dir) {
+    static List<String> plainFilenamesIn(TinyGitFile dir) {
         String[] files = dir.list(PLAIN_FILES);
         if (files == null) {
             return null;
@@ -181,7 +181,7 @@ class Utils {
      *  lexicographic order as Java Strings.  Returns null if DIR does
      *  not denote a directory. */
     static List<String> plainFilenamesIn(String dir) {
-        return plainFilenamesIn(new GitletFile(dir));
+        return plainFilenamesIn(new TinyGitFile(dir));
     }
 
     /* OTHER FILE UTILITIES */
@@ -196,7 +196,7 @@ class Utils {
     /** Return the concatentation of FIRST and OTHERS into a File designator,
      *  analogous to the
      *  method. */
-    static File join(GitletFile first, String... others) {
+    static File join(TinyGitFile first, String... others) {
         return Paths.get(first.getPath(), others).toFile();
     }
 
@@ -222,8 +222,8 @@ class Utils {
 
     /** Return a GitletException whose message is composed from MSG and ARGS as
      *  for the String.format method. */
-    static GitletException error(String msg, Object... args) {
-        return new GitletException(String.format(msg, args));
+    static TinyGitException error(String msg, Object... args) {
+        return new TinyGitException(String.format(msg, args));
     }
 
     /** Print a message composed from MSG and ARGS as for the String.format
